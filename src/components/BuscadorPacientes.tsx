@@ -1,3 +1,4 @@
+import type { ChangeEvent } from "react";
 
 interface BuscadorPacientesProps {
   value: string;
@@ -8,6 +9,9 @@ export function BuscadorPacientes({
   value,
   onChange,
 }: BuscadorPacientesProps) {
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    onChange(event.target.value);
+  }
   return (
     <div className="w-full">
       <label
@@ -34,7 +38,7 @@ export function BuscadorPacientes({
           id="busqueda-pacientes"
           type="search"
           value={value}
-          onChange={(event) => onChange(event.target.value)}
+          onChange={handleChange}
           placeholder="Nombre, apellido o email..."
           className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
         />
