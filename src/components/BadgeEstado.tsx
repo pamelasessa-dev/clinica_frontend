@@ -1,4 +1,5 @@
 import type { EstadoPaciente } from "../types/paciente";
+import { etiquetasPorEstado } from "../types/estados";
 
 interface BadgeEstadoProps {
   estado: EstadoPaciente;
@@ -8,12 +9,6 @@ const estilosPorEstado: Record<EstadoPaciente, string> = {
   activo: "bg-emerald-100 text-emerald-800",
   inactivo: "bg-rose-100 text-rose-800",
   en_espera: "bg-amber-100 text-amber-800",
-};
-
-const etiquetasPorEstado: Record<EstadoPaciente, string> = {
-  activo: "Activo",
-  inactivo: "Inactivo",
-  en_espera: "En espera",
 };
 
 export function BadgeEstado({ estado }: BadgeEstadoProps) {
