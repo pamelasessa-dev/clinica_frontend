@@ -1,7 +1,7 @@
-import { PaginaPacientes } from './pages/PaginaPacientes';
+import { PaginaNuevaCita } from './pages/PaginaNuevaCita';
 
 function App() {
-  return <PaginaPacientes />;
+  return <PaginaNuevaCita />;
 }
 
 export default App;
