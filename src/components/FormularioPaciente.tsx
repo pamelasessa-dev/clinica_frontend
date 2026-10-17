@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { ChangeEvent, SyntheticEvent } from 'react';
 import type { EstadoPaciente, NuevoPaciente } from '../types/paciente';
-import { ESTADOS_PACIENTE, etiquetasPorEstado } from '../types/estados';
+import { ESTADOS_PACIENTE, etiquetasPorEstado } from '../constants/estados';
 
 interface FormularioPacienteProps {
   onAgregar: (paciente: NuevoPaciente) => void;
@@ -20,7 +20,9 @@ const formularioInicial: NuevoPaciente = {
 };
 
 const claseInput =
-  'w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:ring-2';
+  'w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:ring-4';
+
+const claseLabel = 'mb-1.5 block text-sm font-medium text-slate-700';
 
 export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
   // Controlled inputs: React es la única fuente de verdad de cada campo
@@ -83,9 +85,9 @@ export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
       <div>
         <label
           htmlFor="nuevo-nombre"
-          className="mb-2 block text-sm font-medium text-slate-700"
+          className={claseLabel}
         >
-          Nombre
+          Nombre <span className="text-rose-500">*</span>
         </label>
         <input
           id="nuevo-nombre"
@@ -97,12 +99,12 @@ export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
           aria-describedby={errores.nombre ? 'error-nombre' : undefined}
           className={`${claseInput} ${
             errores.nombre
-              ? 'border-rose-400 focus:ring-rose-100'
+              ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-100'
               : 'border-slate-300 focus:border-blue-500 focus:ring-blue-100'
           }`}
         />
         {errores.nombre && (
-          <p id="error-nombre" role="alert" className="mt-1 text-xs text-rose-600">
+          <p id="error-nombre" role="alert" className="mt-1.5 text-xs font-medium text-rose-600">
             {errores.nombre}
           </p>
         )}
@@ -111,7 +113,7 @@ export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
       <div>
         <label
           htmlFor="nuevo-apellido"
-          className="mb-2 block text-sm font-medium text-slate-700"
+          className={claseLabel}
         >
           Apellido
         </label>
@@ -128,9 +130,9 @@ export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
       <div>
         <label
           htmlFor="nuevo-email"
-          className="mb-2 block text-sm font-medium text-slate-700"
+          className={claseLabel}
         >
-          Email
+          Email <span className="text-rose-500">*</span>
         </label>
         <input
           id="nuevo-email"
@@ -142,12 +144,12 @@ export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
           aria-describedby={errores.email ? 'error-email' : undefined}
           className={`${claseInput} ${
             errores.email
-              ? 'border-rose-400 focus:ring-rose-100'
+              ? 'border-rose-400 focus:border-rose-500 focus:ring-rose-100'
               : 'border-slate-300 focus:border-blue-500 focus:ring-blue-100'
           }`}
         />
         {errores.email && (
-          <p id="error-email" role="alert" className="mt-1 text-xs text-rose-600">
+          <p id="error-email" role="alert" className="mt-1.5 text-xs font-medium text-rose-600">
             {errores.email}
           </p>
         )}
@@ -156,7 +158,7 @@ export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
       <div>
         <label
           htmlFor="nuevo-estado"
-          className="mb-2 block text-sm font-medium text-slate-700"
+          className={claseLabel}
         >
           Estado
         </label>
@@ -175,11 +177,26 @@ export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
         </select>
       </div>
 
-      <div className="sm:col-span-2 lg:col-span-4">
+      <div className="flex items-center justify-between gap-3 sm:col-span-2 lg:col-span-4">
+        <p className="text-xs text-slate-500">
+          <span className="text-rose-500">*</span> Campos obligatorios
+        </p>
+
         <button
           type="submit"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+          className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-[0.98] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         >
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+            className="size-4"
+          >
+            <path d="M12 5v14M5 12h14" />
+          </svg>
           Agregar paciente
         </button>
       </div>

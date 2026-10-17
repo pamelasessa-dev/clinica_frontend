@@ -1,6 +1,4 @@
 
-// Fecha de hoy en formato YYYY-MM-DD usando la hora LOCAL del usuario.
-// toISOString() usa UTC y, de noche, puede devolver el día siguiente.
 export function obtenerFechaHoy(): string {
   const hoy = new Date();
   const anio = hoy.getFullYear();
@@ -10,7 +8,6 @@ export function obtenerFechaHoy(): string {
   return `${anio}-${mes}-${dia}`;
 }
 
-// Verifica que el string YYYY-MM-DD sea un día que existe (rechaza 2026-02-31)
 export function esFechaReal(valor: string): boolean {
   const [anio, mes, dia] = valor.split('-').map(Number);
   const fecha = new Date(anio, mes - 1, dia);

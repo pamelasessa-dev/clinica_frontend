@@ -13,7 +13,7 @@ export default function StatusBadge({
   const texto = activo
     ? 'Sistema Operativo'
     : 'Modo Mantenimiento';
-//un boleano para mostrar si el sistema esta operativo o en mantenimiento
+
   return (
     <span
       className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${estilos}`}
@@ -21,6 +21,6 @@ export default function StatusBadge({
     >
       {texto}
     </span>
-    //Span sirve para aplicar estilo al texto o agrupr en una linea
+   
   );
 }

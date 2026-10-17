@@ -1,8 +1,9 @@
-import type { ChangeEvent } from 'react';
-import type { EstadoPaciente } from '../types/paciente';
-import type { Paciente } from '../types/paciente';
-import { ESTADOS_PACIENTE, etiquetasPorEstado } from '../types/estados';
-import { BadgeEstado } from './BadgeEstado';
+import { Link } from 'react-router';
+import type { ChangeEvent } from "react";
+import type { EstadoPaciente } from "../types/paciente";
+import type { Paciente } from "../types/paciente";
+import { ESTADOS_PACIENTE, etiquetasPorEstado } from "../constants/estados";
+import { BadgeEstado } from "./BadgeEstado";
 
 interface PacienteCardProps {
   paciente: Paciente;
@@ -10,8 +11,11 @@ interface PacienteCardProps {
   onEliminar: (id: string) => void;
 }
 
-
-export function PacienteCard({ paciente, onCambiarEstado, onEliminar }: PacienteCardProps) {
+export function PacienteCard({
+  paciente,
+  onCambiarEstado,
+  onEliminar,
+}: PacienteCardProps) {
   const handleCambioEstado = (event: ChangeEvent<HTMLSelectElement>) => {
     onCambiarEstado(paciente.id, event.target.value as EstadoPaciente);
   };
@@ -33,20 +37,27 @@ export function PacienteCard({ paciente, onCambiarEstado, onEliminar }: Paciente
 
       <div className="flex flex-col gap-2 text-sm text-slate-600">
         <p>
-          <span className="font-medium text-slate-800">Email:</span>{' '}
+          <span className="font-medium text-slate-800">Email:</span>{" "}
           {paciente.email}
         </p>
 
         <p>
-          <span className="font-medium text-slate-800">Teléfono:</span>{' '}
+          <span className="font-medium text-slate-800">Teléfono:</span>{" "}
           {paciente.telefono}
         </p>
 
         <p>
-          <span className="font-medium text-slate-800">Última cita:</span>{' '}
+          <span className="font-medium text-slate-800">Última cita:</span>{" "}
           {paciente.ultimaCita}
         </p>
       </div>
+
+      <Link
+        to={`/pacientes/${paciente.id}`}
+        className="inline-flex items-center gap-1 self-start text-sm font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+      >
+        Ver detalle <span aria-hidden="true">→</span>
+      </Link>
 
       <div className="flex items-center justify-between gap-3 border-t border-slate-100 pt-4">
         <label className="flex items-center gap-2 text-sm text-slate-600">
@@ -76,4 +87,3 @@ export function PacienteCard({ paciente, onCambiarEstado, onEliminar }: Paciente
     </article>
   );
 }
-

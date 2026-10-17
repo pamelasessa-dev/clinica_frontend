@@ -35,6 +35,3 @@ export const citaSchema = z.object({
 });
 
 export type CitaFormData = z.infer<typeof citaSchema>;
-
-//Zod valida los datos cuando se ejecuta;
-//  z.infer obtiene un tipo para TypeScript durante el desarrollo.

@@ -1,6 +1,6 @@
-import type { ChangeEvent } from 'react';
-import type { FiltroEstado as FiltroEstadoValor } from '../types/paciente';
-import { ESTADOS_PACIENTE, etiquetasPorEstado } from '../types/estados';
+import type { ChangeEvent } from "react";
+import type { FiltroEstado as FiltroEstadoValor } from "../types/paciente";
+import { ESTADOS_PACIENTE, etiquetasPorEstado } from "../constants/estados";
 
 interface FiltroEstadoProps {
   value: FiltroEstadoValor;

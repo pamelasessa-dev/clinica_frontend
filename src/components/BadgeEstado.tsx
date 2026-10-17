@@ -1,5 +1,5 @@
 import type { EstadoPaciente } from "../types/paciente";
-import { etiquetasPorEstado } from "../types/estados";
+import { etiquetasPorEstado } from "../constants/estados";
 
 interface BadgeEstadoProps {
   estado: EstadoPaciente;
