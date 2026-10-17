@@ -1,10 +1,10 @@
 
 import type { Metrica, Tendencia } from '../types';
-//Se define los deatos que debe recibir el componente con MetricCardProps
+
 interface MetricCardProps {
   metrica: Metrica;
 }
-//color por Tendencia para centralizar los colores y no hacer varios operadores ternarios
+
 const colorPorTendencia: Record<Tendencia, string> = {
   positiva: 'text-emerald-600',
   negativa: 'text-rose-600',

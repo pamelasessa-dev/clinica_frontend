@@ -1,6 +1,9 @@
-import { FormularioCita } from "./FormularioCita";
+import { useNavigate } from 'react-router';
+import { FormularioCita } from '../components/FormularioCita';
 
 export function PaginaNuevaCita() {
+  const navigate = useNavigate();
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-3xl">
@@ -16,7 +19,7 @@ export function PaginaNuevaCita() {
           </p>
         </header>
 
-        <FormularioCita />
+        <FormularioCita onCancelar={() => navigate(-1)} />
       </div>
     </main>
   );

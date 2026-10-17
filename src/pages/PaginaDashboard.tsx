@@ -1,4 +1,4 @@
-
+import { Link } from 'react-router';
 import { useState } from 'react';
 import MetricCard from '../components/MetricCard';
 import StatusBadge from '../components/StatusBadge';
@@ -53,7 +53,7 @@ export default function PaginaDashboard() {
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-8 lg:px-12">
-      <div className="mx-auto max-w-7x1">
+      <div className="mx-auto max-w-7xl">
       {mantenimiento && (
         <div
           role="alert"
@@ -63,7 +63,7 @@ export default function PaginaDashboard() {
         </div>
       )}
 
-      <header className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">ç
+      <header className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
         <div>
     <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-700">
       Clínica Salud Integral
@@ -78,7 +78,15 @@ export default function PaginaDashboard() {
     </p>
   </div>
 
-  <StatusBadge activo={!mantenimiento} />
+  <div className="flex flex-wrap items-center gap-3">
+    <Link
+      to="/pacientes"
+      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+    >
+      Ver Pacientes
+    </Link>
+    <StatusBadge activo={!mantenimiento} />
+  </div>
       </header>
 
       <section aria-label="Métricas de la clínica">

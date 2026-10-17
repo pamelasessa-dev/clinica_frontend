@@ -12,13 +12,13 @@ export function useMedicos(): UseMedicosResultado {
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    // Simula una petición al backend con 800 ms de demora
+    
     const timer = setTimeout(() => {
       setMedicos(MEDICOS);
       setCargando(false);
     }, 800);
 
-    // Cleanup: si el componente se desmonta antes, se cancela el timer
+    
     return () => clearTimeout(timer);
   }, []);
 

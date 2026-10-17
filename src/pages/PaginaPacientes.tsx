@@ -1,20 +1,3 @@
-/* Problemas encontrados en el código generado por la IA:
-- Todo estaba mezclado en un solo archivo (lista, buscador, badge de estado
-y tarjeta en un único bloque de JSX). Lo separé en BadgeEstado, PacienteCard,
-- Los datos de ejemplo estaban hardcodeados dentro del JSX. Los moví a la
-constante pacientesIniciales, tipada como Paciente[] y fuera del componente.
--  El estado del paciente no usaba el tipado definido en types/paciente.ts.
--    Ahora todo usa EstadoPaciente.
--   Record<EstadoPaciente, string>: si se agrega un estado nuevo, TypeScript
-    avisa que falta su estilo.
-- Los colores del badge dependían de condicionales repetidos. Los centralicé
-    en un solo objeto de estilos en vez de varios ternarios.
-- El buscador no era un input controlado. Ahora recibe value/onChange por
-  props, y el filtro normaliza con trim() y toLowerCase().
-- El layout no era responsivo. Ahora usa tarjetas en una columna en móvil
-y una grilla de 2 y 3 columnas en pantallas más grandes.
-*/
-
 import { useState } from 'react';
 import type {
   EstadoPaciente,
