@@ -1,75 +1,56 @@
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from "react";
 import type {
   EstadoPaciente,
   FiltroEstado as FiltroEstadoValor,
   NuevoPaciente,
   Paciente,
-} from '../types/paciente';
-import { PacienteCard } from '../components/PacienteCard';
-import { BuscadorPacientes } from '../components/BuscadorPacientes';
-import { FiltroEstado } from '../components/FiltroEstado';
-import { FormularioPaciente } from '../components/FormularioPaciente';
+  PacienteApi,
+} from "../types/paciente";
+import { PacienteCard } from "../components/PacienteCard";
+import { BuscadorPacientes } from "../components/BuscadorPacientes";
+import { FormularioPaciente } from "../components/FormularioPaciente";
+import { obtenerPacientes } from "../services/pacientes";
 
-
-const pacientesIniciales: Paciente[] = [
-  {
-    id: '1',
-    nombre: 'Ana',
-    apellido: 'García',
-    email: 'ana.garcia@ejemplo.com',
-    telefono: '099 123 456',
-    especialidadAsignada: 'Cardiología',
-    ultimaCita: '2026-10-05',
-    estado: 'activo',
-  },
-  {
-    id: '2',
-    nombre: 'Carlos',
-    apellido: 'Rodríguez',
-    email: 'carlos.rodriguez@ejemplo.com',
-    telefono: '098 234 567',
-    especialidadAsignada: 'Dermatología',
-    ultimaCita: '2026-09-28',
-    estado: 'en_espera',
-  },
-  {
-    id: '3',
-    nombre: 'Lucía',
-    apellido: 'Fernández',
-    email: 'lucia.fernandez@ejemplo.com',
-    telefono: '097 345 678',
-    especialidadAsignada: 'Pediatría',
-    ultimaCita: '2026-10-01',
-    estado: 'activo',
-  },
-  {
-    id: '4',
-    nombre: 'Martín',
-    apellido: 'Pérez',
-    email: 'martin.perez@ejemplo.com',
-    telefono: '096 456 789',
-    especialidadAsignada: 'Neurología',
-    ultimaCita: '2026-08-15',
-    estado: 'inactivo',
-  },
-  {
-    id: '5',
-    nombre: 'Sofía',
-    apellido: 'López',
-    email: 'sofia.lopez@ejemplo.com',
-    telefono: '095 567 890',
-    especialidadAsignada: 'Cardiología',
-    ultimaCita: '2026-10-10',
-    estado: 'en_espera',
-  },
-];
+function adaptarPaciente(p: PacienteApi): Paciente {
+  return {
+    id: String(p.CI),
+    nombre: p.nombre,
+    apellido: p.apellido,
+    email: p.email,
+    telefono: p.telefono,
+    especialidadAsignada: "Sin asignar",
+    ultimaCita: "No disponible",
+    estado: "activo",
+  };
+}
 
 export function PaginaPacientes() {
-  const [pacientes, setPacientes] = useState<Paciente[]>(pacientesIniciales);
-  const [busqueda, setBusqueda] = useState('');
-  const [estadoFiltro, setEstadoFiltro] = useState<FiltroEstadoValor>('Todos');
+  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const [busqueda, setBusqueda] = useState("");
+  const [estadoFiltro, setEstadoFiltro] = useState<FiltroEstadoValor>("Todos");
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
 
-  // Se calcula en cada render: los filtros nunca modifican `pacientes`
+  const cargarPacientes = useCallback(async () => {
+    setCargando(true);
+    setError("");
+
+    try {
+      const datos = await obtenerPacientes();
+      setPacientes(datos.map(adaptarPaciente));
+    } catch (err) {
+      setError(
+        "No se pudieron cargar los pacientes. Comprueba la conexión e inténtalo de nuevo.",
+      );
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void cargarPacientes();
+  }, [cargarPacientes]);
+
   const termino = busqueda.trim().toLowerCase();
 
   const pacientesFiltrados = pacientes.filter((paciente) => {
@@ -79,146 +60,180 @@ export function PaginaPacientes() {
       paciente.email.toLowerCase().includes(termino);
 
     const coincideEstado =
-      estadoFiltro === 'Todos' || paciente.estado === estadoFiltro;
+      estadoFiltro === "Todos" || paciente.estado === estadoFiltro;
 
-    // El paciente debe cumplir ambas condiciones a la vez
     return coincideBusqueda && coincideEstado;
   });
 
-  const hayFiltrosActivos = busqueda !== '' || estadoFiltro !== 'Todos';
-
   const limpiarFiltros = () => {
-    setBusqueda('');
-    setEstadoFiltro('Todos');
+    setBusqueda("");
+    setEstadoFiltro("Todos");
   };
 
   const agregarPaciente = (datos: NuevoPaciente) => {
+    // El formulario todavía no registra pacientes en el backend.
+    // Este cambio solo existe temporalmente en la pantalla.
     const nuevo: Paciente = {
       id: crypto.randomUUID(),
       ...datos,
-      // El formulario no pide estos campos todavía
-      telefono: 'Sin registrar',
-      especialidadAsignada: 'Sin asignar',
-      ultimaCita: 'Sin citas',
+      telefono: "Sin registrar",
+      especialidadAsignada: "Sin asignar",
+      ultimaCita: "No disponible",
     };
 
     setPacientes((prev) => [...prev, nuevo]);
   };
 
   const cambiarEstado = (id: string, estado: EstadoPaciente) => {
+    // El cambio de estado todavía es local, no se guarda en la API.
     setPacientes((prev) =>
       prev.map((p) => (p.id === id ? { ...p, estado } : p)),
     );
   };
 
   const eliminarPaciente = (id: string) => {
+    // La eliminación todavía es local, no se envía al backend.
     const paciente = pacientes.find((p) => p.id === id);
     if (!paciente) return;
 
     const confirmado = window.confirm(
       `¿Eliminar a ${paciente.nombre} ${paciente.apellido}?`,
     );
-    if (!confirmado) return;
 
-    setPacientes((prev) => prev.filter((p) => p.id !== id));
+    if (confirmado) {
+      setPacientes((prev) => prev.filter((p) => p.id !== id));
+    }
   };
 
-return (
-  <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
-    <div className="mx-auto max-w-7xl">
-      <header className="mb-8">
-        <p className="text-sm font-medium text-blue-600">
-          Gestión clínica
+  if (cargando) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-8">
+        <p role="status" className="mx-auto max-w-7xl rounded-xl bg-white p-6">
+          Cargando pacientes...
         </p>
+      </main>
+    );
+  }
 
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-          Pacientes
-        </h1>
-
-        <p className="mt-2 text-slate-600">
-          Consulta y administra la información de tus pacientes.
-        </p>
-      </header>
-
-      <section
-        aria-label="Agregar paciente"
-        className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
-      >
-        <h2 className="mb-4 text-lg font-semibold text-slate-900">
-          Agregar paciente
-        </h2>
-
-        <FormularioPaciente onAgregar={agregarPaciente} />
-      </section>
-
-      <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-          <BuscadorPacientes
-            value={busqueda}
-            onChange={setBusqueda}
-          />
-
-          <FiltroEstado
-            value={estadoFiltro}
-            onChange={setEstadoFiltro}
-          />
-
+  if (error) {
+    return (
+      <main className="min-h-screen bg-slate-50 px-4 py-8">
+        <section
+          role="alert"
+          className="mx-auto max-w-7xl rounded-xl border border-rose-200 bg-white p-6"
+        >
+          <p className="text-rose-700">{error}</p>
           <button
             type="button"
-            onClick={limpiarFiltros}
-            disabled={!hayFiltrosActivos}
-            className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            onClick={() => void cargarPacientes()}
+            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-white"
           >
-            Limpiar filtros
+            Reintentar
           </button>
-        </div>
-
-        <p className="mt-4 text-sm text-slate-500" aria-live="polite">
-          {pacientesFiltrados.length}{' '}
-          {pacientesFiltrados.length === 1
-            ? 'paciente encontrado'
-            : 'pacientes encontrados'}
-        </p>
-      </section>
-
-      {pacientesFiltrados.length > 0 ? (
-        <section
-          aria-label="Lista de pacientes"
-          className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
-        >
-          {pacientesFiltrados.map((paciente) => (
-            <PacienteCard
-              key={paciente.id}
-              paciente={paciente}
-              onCambiarEstado={cambiarEstado}
-              onEliminar={eliminarPaciente}
-            />
-          ))}
         </section>
-      ) : (
-        <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-          <h2 className="text-lg font-semibold text-slate-900">
-            No se encontraron pacientes
-          </h2>
+      </main>
+    );
+  }
 
-          <p className="mt-2 text-sm text-slate-500">
-            {pacientes.length === 0
-              ? 'Aún no hay pacientes registrados. Agrega el primero con el formulario.'
-              : 'Prueba con otro nombre, apellido, email o estado.'}
+  const hayFiltrosActivos = busqueda !== "" || estadoFiltro !== "Todos";
+
+  return (
+    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-8">
+          <p className="text-sm font-medium text-blue-600">Gestión clínica</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
+            Pacientes
+          </h1>
+          <p className="mt-2 text-slate-600">
+            Consulta y administra la información de tus pacientes.
           </p>
+        </header>
 
-          {pacientes.length > 0 && (
+        <section
+          aria-label="Agregar paciente"
+          className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
+        >
+          <h2 className="mb-4 text-lg font-semibold text-slate-900">
+            Agregar paciente
+          </h2>
+          <FormularioPaciente onAgregar={agregarPaciente} />
+        </section>
+
+        <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+            <BuscadorPacientes value={busqueda} onChange={setBusqueda} />
+
+            <label className="flex flex-col gap-1 text-sm text-slate-700">
+              Filtrar por estado
+              <select
+                value={estadoFiltro}
+                onChange={(event) =>
+                  setEstadoFiltro(event.target.value as FiltroEstadoValor)
+                }
+                className="rounded-lg border border-slate-300 bg-white px-3 py-2"
+              >
+                <option value="Todos">Todos</option>
+                <option value="activo">Activo</option>
+                <option value="inactivo">Inactivo</option>
+                <option value="en_espera">En espera</option>
+              </select>
+            </label>
+
             <button
               type="button"
               onClick={limpiarFiltros}
-              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              disabled={!hayFiltrosActivos}
+              className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50"
             >
               Limpiar filtros
             </button>
-          )}
-        </div>
-      )}
-    </div>
-  </main>
-);
+          </div>
+
+          <p className="mt-4 text-sm text-slate-500" aria-live="polite">
+            {pacientesFiltrados.length}{" "}
+            {pacientesFiltrados.length === 1
+              ? "paciente encontrado"
+              : "pacientes encontrados"}
+          </p>
+        </section>
+
+        {pacientesFiltrados.length > 0 ? (
+          <section
+            aria-label="Lista de pacientes"
+            className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+          >
+            {pacientesFiltrados.map((paciente) => (
+              <PacienteCard
+                key={paciente.id}
+                paciente={paciente}
+                onCambiarEstado={cambiarEstado}
+                onEliminar={eliminarPaciente}
+              />
+            ))}
+          </section>
+        ) : (
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+            <h2 className="text-lg font-semibold text-slate-900">
+              No se encontraron pacientes
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">
+              {pacientes.length === 0
+                ? "La API no devolvió pacientes."
+                : "Prueba con otro nombre, apellido o email."}
+            </p>
+            {pacientes.length > 0 && (
+              <button
+                type="button"
+                onClick={limpiarFiltros}
+                className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+              >
+                Limpiar filtros
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </main>
+  );
 }

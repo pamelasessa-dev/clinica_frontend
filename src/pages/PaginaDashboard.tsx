@@ -1,141 +1,161 @@
-import { Link } from 'react-router';
-import { useState } from 'react';
-import MetricCard from '../components/MetricCard';
-import StatusBadge from '../components/StatusBadge';
-import type { Metrica } from '../types';
+import { Link } from "react-router";
+import { useCallback, useEffect, useState } from "react";
+import MetricCard from "../components/MetricCard";
+import StatusBadge from "../components/StatusBadge";
+import type { Metrica } from "../types";
+import { obtenerMetricasDashboard } from "../services/dashboard";
 
 export default function PaginaDashboard() {
-  const [pacientes, setPacientes] = useState(128); 
   const [mantenimiento, setMantenimiento] = useState(false);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState("");
+  const [metricas, setMetricas] = useState<Metrica[]>([]);
 
-  const metricas: Metrica[] = [
-    {
-      id: 'pacientes',
-      titulo: 'Pacientes',
-      valor: pacientes,
-      descripcion: 'Pacientes registrados',
-      tendencia: 'positiva',
-      icono: '👥',
-    },
-    {
-      id: 'citas',
-      titulo: 'Citas Hoy',
-      valor: 24,
-      descripcion: 'Agenda del día',
-      tendencia: 'positiva',
-      icono: '📅',
-    },
-    {
-      id: 'pendientes',
-      titulo: 'Consultas Pendientes',
-      valor: 8,
-      descripcion: 'Requieren atención',
-      tendencia: 'negativa',
-      icono: '📋',
-    },
-    {
-      id: 'disponibilidad',
-      titulo: 'Disponibilidad',
-      valor: '92%',
-      descripcion: 'Capacidad disponible',
-      tendencia: 'neutra',
-      icono: '📊',
-    },
-  ];
+  const cargarMetricas = useCallback(async () => {
+    setCargando(true);
+    setError("");
 
-  const incrementarPacientes = () => {
-    setPacientes((prev) => prev + 1);
-  };
+    try {
+      const datos = await obtenerMetricasDashboard();
 
-  const decrementarPacientes = () => {
-    setPacientes((prev) => Math.max(0, prev - 1));
-  };
+      setMetricas([
+        {
+          id: "pacientes",
+          titulo: "Pacientes",
+          valor: datos.pacientes,
+          descripcion: "Pacientes registrados",
+          tendencia: "positiva",
+          icono: "👥",
+        },
+        {
+          id: "medicos",
+          titulo: "Médicos",
+          valor: datos.medicos,
+          descripcion: "Médicos registrados",
+          tendencia: "positiva",
+          icono: "🩺",
+        },
+        {
+          id: "programadas",
+          titulo: "Citas programadas",
+          valor: datos.citasProgramadas,
+          descripcion: "Citas pendientes de atención",
+          tendencia: "neutra",
+          icono: "📅",
+        },
+        {
+          id: "completadas",
+          titulo: "Citas completadas",
+          valor: datos.citasCompletadas,
+          descripcion: "Citas finalizadas",
+          tendencia: "positiva",
+          icono: "✅",
+        },
+      ]);
+    } catch (err) {
+      setError(
+        "No se pudieron cargar las métricas. Comprueba tu conexión e inténtalo de nuevo.",
+      );
+    } finally {
+      setCargando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void cargarMetricas();
+  }, [cargarMetricas]);
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-7xl">
-      {mantenimiento && (
-        <div
-          role="alert"
-          className="mb-6 rounded-lg bg-rose-100 p-4 font-medium text-rose-800"
-        >
-          El sistema está en modo mantenimiento.
-        </div>
-      )}
-
-      <header className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-    <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-700">
-      Clínica Salud Integral
-    </p>
-
-    <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-      Dashboard
-    </h1>
-
-    <p className="mt-2 text-sm text-slate-500 sm:text-base">
-      Resumen general de la clínica
-    </p>
-  </div>
-
-  <div className="flex flex-wrap items-center gap-3">
-    <Link
-      to="/pacientes"
-      className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
-    >
-      Ver Pacientes
-    </Link>
-    <StatusBadge activo={!mantenimiento} />
-  </div>
-      </header>
-
-      <section aria-label="Métricas de la clínica">
-        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="text-xl font-semibold text-slate-800">
-            Indicadores principales
-          </h2>
-
-          <button
-            type="button"
-            onClick={() => setMantenimiento((prev) => !prev)}
-            aria-pressed={mantenimiento}
-            className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+        {mantenimiento && (
+          <div
+            role="alert"
+            className="mb-6 rounded-lg bg-rose-100 p-4 font-medium text-rose-800"
           >
-            {mantenimiento
-              ? 'Desactivar mantenimiento'
-              : 'Activar mantenimiento'}
-          </button>
-        </div>
+            El sistema está en modo mantenimiento.
+          </div>
+        )}
 
-        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-          {metricas.map((metrica) => (
-            <div key={metrica.id}>
-              <MetricCard metrica={metrica} />
+        <header className="mb-10 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-emerald-700">
+              Clínica Salud Integral
+            </p>
 
-              {metrica.id === 'pacientes' && (
-                <div className="mt-3 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={decrementarPacientes}
-                    aria-label="Disminuir pacientes"
-                    className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700 hover:bg-slate-100"
-                  >-
-                  </button>
+            <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+              Dashboard
+            </h1>
 
-                  <button
-                    type="button"
-                    onClick={incrementarPacientes}
-                    aria-label="Incrementar pacientes"
-                    className="flex-1 rounded-lg bg-teal-700 px-4 py-2 font-semibold text-white hover:bg-teal-800"
-                  >+
-                    
-                  </button>
-                </div>
-              )}
+            <p className="mt-2 text-sm text-slate-500 sm:text-base">
+              Resumen general de la clínica
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              to="/pacientes"
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              Ver Pacientes
+            </Link>
+
+            <StatusBadge activo={!mantenimiento} />
+          </div>
+        </header>
+
+        <section aria-label="Métricas de la clínica">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <h2 className="text-xl font-semibold text-slate-800">
+              Indicadores principales
+            </h2>
+
+            <button
+              type="button"
+              onClick={() => setMantenimiento((prev) => !prev)}
+              aria-pressed={mantenimiento}
+              className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+            >
+              {mantenimiento
+                ? "Desactivar mantenimiento"
+                : "Activar mantenimiento"}
+            </button>
+          </div>
+
+          {cargando && (
+            <p
+              role="status"
+              className="rounded-xl bg-white p-6 text-slate-600 shadow-sm"
+            >
+              Cargando métricas...
+            </p>
+          )}
+
+          {!cargando && error && (
+            <div
+              role="alert"
+              className="rounded-xl border border-rose-200 bg-white p-6"
+            >
+              <p className="text-rose-700">{error}</p>
+
+              <button
+                type="button"
+                onClick={() => void cargarMetricas()}
+                className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+              >
+                Reintentar
+              </button>
             </div>
-          ))}
-        </div>
-      </section>
+          )}
+
+          {!cargando && !error && (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {metricas.map((metrica) => (
+                <MetricCard key={metrica.id} metrica={metrica} />
+              ))}
+            </div>
+          )}
+        </section>
       </div>
     </main>
   );
