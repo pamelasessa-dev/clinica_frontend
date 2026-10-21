@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import toast from "react-hot-toast";
 import type {
-  FiltroEstado as FiltroEstadoValor,
   Paciente,
   PacienteApi,
   CrearPacienteDTO,
@@ -8,11 +8,15 @@ import type {
 import { PacienteCard } from "../components/PacienteCard";
 import { BuscadorPacientes } from "../components/BuscadorPacientes";
 import { FormularioPaciente } from "../components/FormularioPaciente";
-import { 
-  crearPaciente,
-  eliminarPaciente as eliminarPacienteAPI, 
+import { ModalConfirmacion } from "../components/ModalConfirmacion";
+import {
   obtenerPacientes,
- } from "../services/pacientes";
+  crearPaciente,
+  actualizarPaciente,
+  eliminarPaciente as eliminarPacienteAPI,
+} from "../services/pacientes";
+
+import { extraerMensajeError } from "../lib/errorHandler";
 
 function adaptarPaciente(p: PacienteApi): Paciente {
   return {
@@ -21,6 +25,8 @@ function adaptarPaciente(p: PacienteApi): Paciente {
     apellido: p.apellido,
     email: p.email,
     telefono: p.telefono,
+    fecha_nacimiento: p.fecha_nacimiento,
+    direccion: p.direccion,
     especialidadAsignada: "Sin asignar",
     ultimaCita: "No disponible",
   };
@@ -29,10 +35,20 @@ function adaptarPaciente(p: PacienteApi): Paciente {
 export function PaginaPacientes() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [busqueda, setBusqueda] = useState("");
-  const [estadoFiltro, setEstadoFiltro] = useState<FiltroEstadoValor>("Todos");
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState("");
 
+  const [pacienteEditando, setPacienteEditando] = useState<Paciente | null>(
+    null,
+  );
+
+  const [pacienteAEliminar, setPacienteAEliminar] = useState<Paciente | null>(
+    null,
+  );
+
+  const [eliminando, setEliminando] = useState(false);
+
+  // Cargar pacientes desde la API
   const cargarPacientes = useCallback(async () => {
     setCargando(true);
     setError("");
@@ -41,9 +57,7 @@ export function PaginaPacientes() {
       const datos = await obtenerPacientes();
       setPacientes(datos.map(adaptarPaciente));
     } catch (err) {
-      setError(
-        "No se pudieron cargar los pacientes. Comprueba la conexión e inténtalo de nuevo.",
-      );
+      setError(extraerMensajeError(err));
     } finally {
       setCargando(false);
     }
@@ -53,75 +67,124 @@ export function PaginaPacientes() {
     void cargarPacientes();
   }, [cargarPacientes]);
 
+  // Buscar por nombre, apellido o email
   const termino = busqueda.trim().toLowerCase();
 
   const pacientesFiltrados = pacientes.filter((paciente) => {
-    const coincideBusqueda =
+    return (
       paciente.nombre.toLowerCase().includes(termino) ||
       paciente.apellido.toLowerCase().includes(termino) ||
-      paciente.email.toLowerCase().includes(termino);
-
-   
-    return coincideBusqueda;
+      paciente.email.toLowerCase().includes(termino)
+    );
   });
 
-  const limpiarFiltros = () => {
+  const limpiarBusqueda = () => {
     setBusqueda("");
-    setEstadoFiltro("Todos");
-  };
-  
-  const agregarPaciente = async (datos: CrearPacienteDTO): Promise<void> => {
-    const pacienteCreado = await crearPaciente(datos);
-    setPacientes((prev) => [
-      ...prev,
-      adaptarPaciente(pacienteCreado),
-    ]);
   };
 
-  const eliminarPaciente = async (id: string): Promise<void> => {
-    const paciente = pacientes.find((p) => p.id === id);
-    if (!paciente) return;
-    
-    const confirmado = window.confirm(
-    `¿Eliminar a ${paciente.nombre} ${paciente.apellido}?`,
-  );
-  
-  if (!confirmado) return;
+  // Crear o actualizar un paciente
+  const guardarPaciente = async (datos: CrearPacienteDTO): Promise<void> => {
     try {
-      await eliminarPacienteAPI(id);
-      
-      setPacientes((prev) => prev.filter((p) => p.id !== id));
-    } catch (error) {
-      console.error("Error al eliminar el paciente:", error);
-      
-      window.alert(
-        "No se pudo eliminar el paciente. Comprueba la conexión e inténtalo de nuevo.",
-      );
+      if (pacienteEditando) {
+        const idOriginal = pacienteEditando.id;
+
+        const actualizado = await actualizarPaciente(idOriginal, {
+          nombre: datos.nombre,
+          apellido: datos.apellido,
+          email: datos.email,
+          fecha_nacimiento: datos.fecha_nacimiento,
+          direccion: datos.direccion,
+          telefono: datos.telefono,
+        });
+
+        setPacientes((prev) =>
+          prev.map((paciente) =>
+            paciente.id === idOriginal
+              ? adaptarPaciente(actualizado)
+              : paciente,
+          ),
+        );
+
+        setPacienteEditando(null);
+        toast.success("Paciente actualizado correctamente");
+      } else {
+        const creado = await crearPaciente(datos);
+
+        setPacientes((prev) => [...prev, adaptarPaciente(creado)]);
+
+        toast.success("Paciente registrado correctamente");
+      }
+    } catch (err) {
+      toast.error(extraerMensajeError(err));
+
+      // Permite que el formulario también sepa que el guardado falló.
+      throw err;
     }
   };
 
+  // Abrir el modal de confirmación
+  const solicitarEliminarPaciente = (id: string) => {
+    const seleccionado = pacientes.find((paciente) => paciente.id === id);
+
+    if (seleccionado) {
+      setPacienteAEliminar(seleccionado);
+    }
+  };
+
+  // Eliminar después de confirmar en el modal
+  const confirmarEliminarPaciente = async (): Promise<void> => {
+    if (!pacienteAEliminar || eliminando) return;
+
+    const id = pacienteAEliminar.id;
+
+    setEliminando(true);
+
+    try {
+      await eliminarPacienteAPI(id);
+
+      setPacientes((prev) => prev.filter((paciente) => paciente.id !== id));
+
+      setPacienteAEliminar(null);
+      toast.success("Paciente eliminado correctamente");
+    } catch (err) {
+      toast.error(extraerMensajeError(err));
+    } finally {
+      setEliminando(false);
+    }
+  };
+
+  // Estado de carga
   if (cargando) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-8">
-        <p role="status" className="mx-auto max-w-7xl rounded-xl bg-white p-6">
+      <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
+        <p
+          role="status"
+          className="mx-auto max-w-7xl rounded-xl bg-white p-6 text-slate-600 shadow-sm"
+        >
           Cargando pacientes...
         </p>
       </main>
     );
   }
 
+  // Estado de error al cargar
   if (error) {
     return (
-      <main className="min-h-screen bg-slate-50 px-4 py-8">
+      <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
         <section
           role="alert"
           className="mx-auto max-w-7xl rounded-xl border border-rose-200 bg-white p-6"
         >
-          <p className="text-rose-700">{error}</p>
+          <h1 className="text-lg font-semibold text-slate-900">
+            No se pudieron cargar los pacientes
+          </h1>
+
+          <p className="mt-2 text-sm text-rose-700">{error}</p>
+
           <button
             type="button"
             onClick={() => void cargarPacientes()}
-            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-white"
+            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             Reintentar
           </button>
@@ -130,58 +193,55 @@ export function PaginaPacientes() {
     );
   }
 
-  const hayFiltrosActivos = busqueda !== "" || estadoFiltro !== "Todos";
+  const hayBusquedaActiva = busqueda.trim() !== "";
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
+        {/* Encabezado */}
         <header className="mb-8">
           <p className="text-sm font-medium text-blue-600">Gestión clínica</p>
+
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
             Pacientes
           </h1>
+
           <p className="mt-2 text-slate-600">
             Consulta y administra la información de tus pacientes.
           </p>
         </header>
 
+        {/* Formulario de creación y edición */}
         <section
-          aria-label="Agregar paciente"
+          aria-label={pacienteEditando ? "Editar paciente" : "Agregar paciente"}
           className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
         >
           <h2 className="mb-4 text-lg font-semibold text-slate-900">
-            Agregar paciente
+            {pacienteEditando ? "Editar paciente" : "Agregar paciente"}
           </h2>
-          <FormularioPaciente onAgregar={agregarPaciente} />
+
+          <FormularioPaciente
+            key={pacienteEditando?.id ?? "nuevo-paciente"}
+            pacienteInicial={pacienteEditando}
+            onGuardar={guardarPaciente}
+            onCancelar={
+              pacienteEditando ? () => setPacienteEditando(null) : undefined
+            }
+          />
         </section>
 
+        {/* Buscador */}
         <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
             <BuscadorPacientes value={busqueda} onChange={setBusqueda} />
 
-            <label className="flex flex-col gap-1 text-sm text-slate-700">
-              Filtrar por estado
-              <select
-                value={estadoFiltro}
-                onChange={(event) =>
-                  setEstadoFiltro(event.target.value as FiltroEstadoValor)
-                }
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2"
-              >
-                <option value="Todos">Todos</option>
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
-                <option value="en_espera">En espera</option>
-              </select>
-            </label>
-
             <button
               type="button"
-              onClick={limpiarFiltros}
-              disabled={!hayFiltrosActivos}
-              className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 disabled:opacity-50"
+              onClick={limpiarBusqueda}
+              disabled={!hayBusquedaActiva}
+              className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Limpiar filtros
+              Limpiar búsqueda
             </button>
           </div>
 
@@ -193,6 +253,7 @@ export function PaginaPacientes() {
           </p>
         </section>
 
+        {/* Lista de pacientes */}
         {pacientesFiltrados.length > 0 ? (
           <section
             aria-label="Lista de pacientes"
@@ -202,32 +263,59 @@ export function PaginaPacientes() {
               <PacienteCard
                 key={paciente.id}
                 paciente={paciente}
-                onEliminar={eliminarPaciente}
+                onEditar={(id) => {
+                  const seleccionado = pacientes.find((p) => p.id === id);
+
+                  if (seleccionado) {
+                    setPacienteEditando(seleccionado);
+                  }
+                }}
+                onEliminar={solicitarEliminarPaciente}
               />
             ))}
           </section>
         ) : (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+          <section className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
             <h2 className="text-lg font-semibold text-slate-900">
               No se encontraron pacientes
             </h2>
+
             <p className="mt-2 text-sm text-slate-500">
               {pacientes.length === 0
                 ? "La API no devolvió pacientes."
                 : "Prueba con otro nombre, apellido o email."}
             </p>
-            {pacientes.length > 0 && (
+
+            {hayBusquedaActiva && (
               <button
                 type="button"
-                onClick={limpiarFiltros}
-                className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+                onClick={limpiarBusqueda}
+                className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
               >
-                Limpiar filtros
+                Limpiar búsqueda
               </button>
             )}
-          </div>
+          </section>
         )}
       </div>
+
+      {/* Modal para confirmar la eliminación */}
+      <ModalConfirmacion
+        abierto={pacienteAEliminar !== null}
+        titulo="Eliminar paciente"
+        mensaje={
+          pacienteAEliminar
+            ? `¿Seguro que deseas eliminar a ${pacienteAEliminar.nombre} ${pacienteAEliminar.apellido}? Esta acción no se puede deshacer.`
+            : ""
+        }
+        cargando={eliminando}
+        onCancelar={() => {
+          if (!eliminando) {
+            setPacienteAEliminar(null);
+          }
+        }}
+        onConfirmar={() => void confirmarEliminarPaciente()}
+      />
     </main>
   );
 }
