@@ -1,4 +1,4 @@
-import type { EstadoPaciente } from '../types/paciente';
+/*import type { EstadoPaciente } from '../types/paciente';
 
 export const ESTADOS_PACIENTE: EstadoPaciente[] = [
   'activo',
@@ -11,3 +11,4 @@ export const etiquetasPorEstado: Record<EstadoPaciente, string> = {
   inactivo: 'Inactivo',
   en_espera: 'En espera',
 };
+*/

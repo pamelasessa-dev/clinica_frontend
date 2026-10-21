@@ -1,7 +1,5 @@
 
-export type EstadoPaciente = 'activo' | 'inactivo' | 'en_espera';
-
-export type FiltroEstado = EstadoPaciente | 'Todos';
+export type FiltroEstado =  'Todos';
 
 export interface Paciente {
   id: string;
@@ -11,14 +9,12 @@ export interface Paciente {
   telefono: string;
   especialidadAsignada: string;
   ultimaCita: string;
-  estado: EstadoPaciente;
 }
 
 export interface NuevoPaciente {
   nombre: string;
   apellido: string;
   email: string;
-  estado: EstadoPaciente;
 }
 
 
@@ -47,4 +43,14 @@ export interface CitaExpedienteApi {
 
 export interface PacienteExpedienteApi extends PacienteApi {
   citas: CitaExpedienteApi[];
+}
+
+export interface CrearPacienteDTO {
+  CI: number;
+  nombre: string;
+  apellido: string;
+  fecha_nacimiento: string;
+  direccion: string;
+  telefono: string;
+  email: string;
 }

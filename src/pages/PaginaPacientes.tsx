@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
 import type {
-  EstadoPaciente,
   FiltroEstado as FiltroEstadoValor,
-  NuevoPaciente,
   Paciente,
   PacienteApi,
+  CrearPacienteDTO,
 } from "../types/paciente";
 import { PacienteCard } from "../components/PacienteCard";
 import { BuscadorPacientes } from "../components/BuscadorPacientes";
 import { FormularioPaciente } from "../components/FormularioPaciente";
-import { obtenerPacientes } from "../services/pacientes";
+import { 
+  crearPaciente,
+  eliminarPaciente as eliminarPacienteAPI, 
+  obtenerPacientes,
+ } from "../services/pacientes";
 
 function adaptarPaciente(p: PacienteApi): Paciente {
   return {
@@ -20,7 +23,6 @@ function adaptarPaciente(p: PacienteApi): Paciente {
     telefono: p.telefono,
     especialidadAsignada: "Sin asignar",
     ultimaCita: "No disponible",
-    estado: "activo",
   };
 }
 
@@ -59,49 +61,42 @@ export function PaginaPacientes() {
       paciente.apellido.toLowerCase().includes(termino) ||
       paciente.email.toLowerCase().includes(termino);
 
-    const coincideEstado =
-      estadoFiltro === "Todos" || paciente.estado === estadoFiltro;
-
-    return coincideBusqueda && coincideEstado;
+   
+    return coincideBusqueda;
   });
 
   const limpiarFiltros = () => {
     setBusqueda("");
     setEstadoFiltro("Todos");
   };
-
-  const agregarPaciente = (datos: NuevoPaciente) => {
-    // El formulario todavía no registra pacientes en el backend.
-    // Este cambio solo existe temporalmente en la pantalla.
-    const nuevo: Paciente = {
-      id: crypto.randomUUID(),
-      ...datos,
-      telefono: "Sin registrar",
-      especialidadAsignada: "Sin asignar",
-      ultimaCita: "No disponible",
-    };
-
-    setPacientes((prev) => [...prev, nuevo]);
+  
+  const agregarPaciente = async (datos: CrearPacienteDTO): Promise<void> => {
+    const pacienteCreado = await crearPaciente(datos);
+    setPacientes((prev) => [
+      ...prev,
+      adaptarPaciente(pacienteCreado),
+    ]);
   };
 
-  const cambiarEstado = (id: string, estado: EstadoPaciente) => {
-    // El cambio de estado todavía es local, no se guarda en la API.
-    setPacientes((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, estado } : p)),
-    );
-  };
-
-  const eliminarPaciente = (id: string) => {
-    // La eliminación todavía es local, no se envía al backend.
+  const eliminarPaciente = async (id: string): Promise<void> => {
     const paciente = pacientes.find((p) => p.id === id);
     if (!paciente) return;
-
+    
     const confirmado = window.confirm(
-      `¿Eliminar a ${paciente.nombre} ${paciente.apellido}?`,
-    );
-
-    if (confirmado) {
+    `¿Eliminar a ${paciente.nombre} ${paciente.apellido}?`,
+  );
+  
+  if (!confirmado) return;
+    try {
+      await eliminarPacienteAPI(id);
+      
       setPacientes((prev) => prev.filter((p) => p.id !== id));
+    } catch (error) {
+      console.error("Error al eliminar el paciente:", error);
+      
+      window.alert(
+        "No se pudo eliminar el paciente. Comprueba la conexión e inténtalo de nuevo.",
+      );
     }
   };
 
@@ -207,7 +202,6 @@ export function PaginaPacientes() {
               <PacienteCard
                 key={paciente.id}
                 paciente={paciente}
-                onCambiarEstado={cambiarEstado}
                 onEliminar={eliminarPaciente}
               />
             ))}
