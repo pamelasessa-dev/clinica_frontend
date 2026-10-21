@@ -1,67 +1,30 @@
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import { usePacientesStore } from "../store/pacientesStore";
 import toast from "react-hot-toast";
 import type {
   Paciente,
-  PacienteApi,
   CrearPacienteDTO,
 } from "../types/paciente";
 import { PacienteCard } from "../components/PacienteCard";
 import { BuscadorPacientes } from "../components/BuscadorPacientes";
 import { FormularioPaciente } from "../components/FormularioPaciente";
 import { ModalConfirmacion } from "../components/ModalConfirmacion";
-import {
-  obtenerPacientes,
-  crearPaciente,
-  actualizarPaciente,
-  eliminarPaciente as eliminarPacienteAPI,
-} from "../services/pacientes";
-
 import { extraerMensajeError } from "../lib/errorHandler";
 
-function adaptarPaciente(p: PacienteApi): Paciente {
-  return {
-    id: String(p.CI),
-    nombre: p.nombre,
-    apellido: p.apellido,
-    email: p.email,
-    telefono: p.telefono,
-    fecha_nacimiento: p.fecha_nacimiento,
-    direccion: p.direccion,
-    especialidadAsignada: "Sin asignar",
-    ultimaCita: "No disponible",
-  };
-}
 
 export function PaginaPacientes() {
-  const [pacientes, setPacientes] = useState<Paciente[]>([]);
+  const pacientes = usePacientesStore((state) => state.pacientes);
+  const cargando = usePacientesStore((state) => state.cargando);
+  const error = usePacientesStore ((state) => state.error);
+  const cargarPacientes = usePacientesStore((state) => state.cargarPacientes);
+  const agregarPaciente = usePacientesStore((state) => state.agregarPaciente);
+  const editarPaciente = usePacientesStore((state) => state.editarPaciente);
+  const eliminarPaciente = usePacientesStore((state) => state.eliminarPaciente);
+  
   const [busqueda, setBusqueda] = useState("");
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState("");
-
-  const [pacienteEditando, setPacienteEditando] = useState<Paciente | null>(
-    null,
-  );
-
-  const [pacienteAEliminar, setPacienteAEliminar] = useState<Paciente | null>(
-    null,
-  );
-
+  const [pacienteEditando, setPacienteEditando] = useState<Paciente | null>(null);
+  const [pacienteAEliminar, setPacienteAEliminar] = useState<Paciente | null>(null);
   const [eliminando, setEliminando] = useState(false);
-
-  // Cargar pacientes desde la API
-  const cargarPacientes = useCallback(async () => {
-    setCargando(true);
-    setError("");
-
-    try {
-      const datos = await obtenerPacientes();
-      setPacientes(datos.map(adaptarPaciente));
-    } catch (err) {
-      setError(extraerMensajeError(err));
-    } finally {
-      setCargando(false);
-    }
-  }, []);
 
   useEffect(() => {
     void cargarPacientes();
@@ -82,45 +45,33 @@ export function PaginaPacientes() {
     setBusqueda("");
   };
 
-  // Crear o actualizar un paciente
-  const guardarPaciente = async (datos: CrearPacienteDTO): Promise<void> => {
-    try {
-      if (pacienteEditando) {
-        const idOriginal = pacienteEditando.id;
+  // Crear o actualizar un paciente  
+const guardarPaciente = async (datos: CrearPacienteDTO): Promise<void> => {
+  try {
+    if (pacienteEditando) {
+      const idOriginal = pacienteEditando.id;
 
-        const actualizado = await actualizarPaciente(idOriginal, {
-          nombre: datos.nombre,
-          apellido: datos.apellido,
-          email: datos.email,
-          fecha_nacimiento: datos.fecha_nacimiento,
-          direccion: datos.direccion,
-          telefono: datos.telefono,
-        });
+      await editarPaciente(idOriginal, {
+        nombre: datos.nombre,
+        apellido: datos.apellido,
+        email: datos.email,
+        fecha_nacimiento: datos.fecha_nacimiento,
+        direccion: datos.direccion,
+        telefono: datos.telefono,
+      });
 
-        setPacientes((prev) =>
-          prev.map((paciente) =>
-            paciente.id === idOriginal
-              ? adaptarPaciente(actualizado)
-              : paciente,
-          ),
-        );
+      setPacienteEditando(null);
+      toast.success('Paciente actualizado correctamente');
+    } else {
+      await agregarPaciente(datos);
 
-        setPacienteEditando(null);
-        toast.success("Paciente actualizado correctamente");
-      } else {
-        const creado = await crearPaciente(datos);
-
-        setPacientes((prev) => [...prev, adaptarPaciente(creado)]);
-
-        toast.success("Paciente registrado correctamente");
-      }
-    } catch (err) {
-      toast.error(extraerMensajeError(err));
-
-      // Permite que el formulario también sepa que el guardado falló.
-      throw err;
+      toast.success('Paciente registrado correctamente');
     }
-  };
+  } catch (err) {
+    toast.error(extraerMensajeError(err));
+    throw err;
+  }
+};
 
   // Abrir el modal de confirmación
   const solicitarEliminarPaciente = (id: string) => {
@@ -132,26 +83,24 @@ export function PaginaPacientes() {
   };
 
   // Eliminar después de confirmar en el modal
-  const confirmarEliminarPaciente = async (): Promise<void> => {
-    if (!pacienteAEliminar || eliminando) return;
+  
+const confirmarEliminarPaciente = async (): Promise<void> => {
+  if (!pacienteAEliminar || eliminando) return;
 
-    const id = pacienteAEliminar.id;
+  const id = pacienteAEliminar.id;
+  setEliminando(true);
 
-    setEliminando(true);
+  try {
+    await eliminarPaciente(id);
 
-    try {
-      await eliminarPacienteAPI(id);
-
-      setPacientes((prev) => prev.filter((paciente) => paciente.id !== id));
-
-      setPacienteAEliminar(null);
-      toast.success("Paciente eliminado correctamente");
-    } catch (err) {
-      toast.error(extraerMensajeError(err));
-    } finally {
-      setEliminando(false);
-    }
-  };
+    setPacienteAEliminar(null);
+    toast.success('Paciente eliminado correctamente');
+  } catch (err) {
+    toast.error(extraerMensajeError(err));
+  } finally {
+    setEliminando(false);
+  }
+};
 
   // Estado de carga
   if (cargando) {

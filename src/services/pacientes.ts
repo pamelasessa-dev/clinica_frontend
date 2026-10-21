@@ -1,13 +1,12 @@
-
-import { api } from '../lib/axios';
+import { api } from "../lib/axios";
 import type {
   PacienteApi,
   PacienteExpedienteApi,
   CrearPacienteDTO,
-} from '../types/paciente';
+} from "../types/paciente";
 
 export async function obtenerPacientes(): Promise<PacienteApi[]> {
-  const response = await api.get<PacienteApi[]>('/pacientes/');
+  const response = await api.get<PacienteApi[]>("/pacientes/");
   return response.data;
 }
 
@@ -23,18 +22,15 @@ export async function obtenerExpedientePaciente(
 export async function crearPaciente(
   datos: CrearPacienteDTO,
 ): Promise<PacienteApi> {
-  const response = await api.post<PacienteApi>('/pacientes/', datos);
+  const response = await api.post<PacienteApi>("/pacientes/", datos);
   return response.data;
 }
 
 export async function actualizarPaciente(
   CI: string,
-  datos: Partial<Omit<CrearPacienteDTO, 'CI'>>,
+  datos: Partial<Omit<CrearPacienteDTO, "CI">>,
 ): Promise<PacienteApi> {
-  const response = await api.put<PacienteApi>(
-    `/pacientes/${CI}`,
-    datos,
-  );
+  const response = await api.put<PacienteApi>(`/pacientes/${CI}`, datos);
   return response.data;
 }
 
