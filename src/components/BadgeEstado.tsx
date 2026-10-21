@@ -1,8 +1,8 @@
+/*
 import type { EstadoPaciente } from "../types/paciente";
 import { etiquetasPorEstado } from "../constants/estados";
 
 interface BadgeEstadoProps {
-  estado: EstadoPaciente;
 }
 
 const estilosPorEstado: Record<EstadoPaciente, string> = {
@@ -20,3 +20,4 @@ export function BadgeEstado({ estado }: BadgeEstadoProps) {
     </span>
   );
 }
+  */
