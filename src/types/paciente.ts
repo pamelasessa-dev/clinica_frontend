@@ -1,5 +1,5 @@
 
-export type FiltroEstado =  'Todos';
+export type FiltroEstado = 'Todos';
 
 export interface Paciente {
   id: string;
@@ -7,6 +7,8 @@ export interface Paciente {
   apellido: string;
   email: string;
   telefono: string;
+  fecha_nacimiento: string;
+  direccion: string;
   especialidadAsignada: string;
   ultimaCita: string;
 }

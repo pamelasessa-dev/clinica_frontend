@@ -1,14 +1,15 @@
-
 import { Link } from "react-router";
 import type { Paciente } from "../types/paciente";
 
 interface PacienteCardProps {
   paciente: Paciente;
+  onEditar: (id: string) => void;
   onEliminar: (id: string) => void;
 }
 
 export function PacienteCard({
   paciente,
+  onEditar,
   onEliminar,
 }: PacienteCardProps) {
   return (
@@ -17,7 +18,6 @@ export function PacienteCard({
         <h2 className="text-lg font-semibold text-slate-900">
           {paciente.nombre} {paciente.apellido}
         </h2>
-
         <p className="mt-1 text-sm text-slate-500">
           {paciente.especialidadAsignada}
         </p>
@@ -28,12 +28,10 @@ export function PacienteCard({
           <span className="font-medium text-slate-800">Email:</span>{" "}
           {paciente.email}
         </p>
-
         <p>
           <span className="font-medium text-slate-800">Teléfono:</span>{" "}
           {paciente.telefono}
         </p>
-
         <p>
           <span className="font-medium text-slate-800">Última cita:</span>{" "}
           {paciente.ultimaCita}
@@ -42,16 +40,23 @@ export function PacienteCard({
 
       <Link
         to={`/pacientes/${paciente.id}`}
-        className="inline-flex items-center gap-1 self-start text-sm font-semibold text-blue-700 hover:text-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+        className="self-start text-sm font-semibold text-blue-700 hover:text-blue-800"
       >
-        Ver detalle <span aria-hidden="true">→</span>
+        Ver detalle →
       </Link>
 
-      <div className="flex justify-end border-t border-slate-100 pt-4">
+      <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+        <button
+          type="button"
+          onClick={() => onEditar(paciente.id)}
+          className="rounded-lg border border-blue-200 px-3 py-1 text-sm font-medium text-blue-700 hover:bg-blue-50"
+        >
+          Editar
+        </button>
         <button
           type="button"
           onClick={() => onEliminar(paciente.id)}
-          className="rounded-lg border border-rose-200 px-3 py-1 text-sm font-medium text-rose-700 hover:bg-rose-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600"
+          className="rounded-lg border border-rose-200 px-3 py-1 text-sm font-medium text-rose-700 hover:bg-rose-50"
         >
           Eliminar
         </button>

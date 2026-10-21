@@ -1,23 +1,30 @@
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import type { CrearPacienteDTO } from '../types/paciente';
+import type { CrearPacienteDTO, Paciente } from '../types/paciente';
+import { extraerMensajeError } from '../lib/errorHandler';
 
 interface FormularioPacienteProps {
-  onAgregar: (paciente: CrearPacienteDTO) => Promise<void>;
+  pacienteInicial?: Paciente | null;
+  onGuardar: (datos: CrearPacienteDTO) => Promise<void>;
+  onCancelar?: () => void;
 }
 
-interface ErroresFormulario {
-  CI?: string;
-  nombre?: string;
-  apellido?: string;
-  email?: string;
-  fecha_nacimiento?: string;
-  direccion?: string;
-  telefono?: string;
-}
+type FormularioValores = {
+  CI: string;
+  nombre: string;
+  apellido: string;
+  email: string;
+  fecha_nacimiento: string;
+  direccion: string;
+  telefono: string;
+};
 
-const formularioInicial = {
+type CampoFormulario = keyof FormularioValores;
+
+type ErroresFormulario = Partial<Record<CampoFormulario, string>>;
+
+const formularioInicial: FormularioValores = {
   CI: '',
   nombre: '',
   apellido: '',
@@ -28,28 +35,48 @@ const formularioInicial = {
 };
 
 const claseInput =
-  'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100';
+  'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100';
 
 const claseLabel = 'mb-1.5 block text-sm font-medium text-slate-700';
 
-export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
-  const [formulario, setFormulario] = useState(formularioInicial);
+export function FormularioPaciente({
+  pacienteInicial = null,
+  onGuardar,
+  onCancelar,
+}: FormularioPacienteProps) {
+  const [formulario, setFormulario] =
+    useState<FormularioValores>(formularioInicial);
   const [errores, setErrores] = useState<ErroresFormulario>({});
   const [guardando, setGuardando] = useState(false);
   const [errorServidor, setErrorServidor] = useState('');
 
-  const handleChange = (
-    event: ChangeEvent<HTMLInputElement>,
-  ) => {
+  const editando = pacienteInicial !== null;
+
+  useEffect(() => {
+    if (!pacienteInicial) {
+      setFormulario(formularioInicial);
+      return;
+    }
+
+    setFormulario({
+      CI: pacienteInicial.id,
+      nombre: pacienteInicial.nombre,
+      apellido: pacienteInicial.apellido,
+      email: pacienteInicial.email,
+      fecha_nacimiento: pacienteInicial.fecha_nacimiento,
+      direccion: pacienteInicial.direccion,
+      telefono: pacienteInicial.telefono,
+    });
+
+    setErrores({});
+    setErrorServidor('');
+  }, [pacienteInicial]);
+
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
 
     setFormulario((prev) => ({ ...prev, [name]: value }));
-
-    setErrores((prev) => ({
-      ...prev,
-      [name]: undefined,
-    }));
-
+    setErrores((prev) => ({ ...prev, [name]: undefined }));
     setErrorServidor('');
   };
 
@@ -78,8 +105,12 @@ export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
     }
 
     if (!formulario.fecha_nacimiento) {
-      nuevosErrores.fecha_nacimiento = 'La fecha de nacimiento es obligatoria';
-    } else if (formulario.fecha_nacimiento > new Date().toISOString().slice(0, 10)) {
+      nuevosErrores.fecha_nacimiento =
+        'La fecha de nacimiento es obligatoria';
+    } else if (
+      formulario.fecha_nacimiento >
+      new Date().toISOString().slice(0, 10)
+    ) {
       nuevosErrores.fecha_nacimiento = 'La fecha no puede ser futura';
     }
 
@@ -100,7 +131,7 @@ export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
     setErrorServidor('');
 
     try {
-      await onAgregar({
+      await onGuardar({
         CI: Number(formulario.CI),
         nombre: formulario.nombre.trim(),
         apellido: formulario.apellido.trim(),
@@ -110,43 +141,55 @@ export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
         telefono: formulario.telefono.trim(),
       });
 
-      setFormulario(formularioInicial);
+      if (!editando) {
+        setFormulario(formularioInicial);
+      }
+
       setErrores({});
-    } catch (error) {
-      setErrorServidor(
-        error instanceof Error
-          ? error.message
-          : 'No se pudo registrar el paciente.',
-      );
+    } catch (err) {
+      const mensaje = extraerMensajeError(err);
+      setErrorServidor(mensaje);
     } finally {
       setGuardando(false);
     }
   };
 
   const campo = (
-    nombre: keyof typeof formulario,
+    nombre: CampoFormulario,
     etiqueta: string,
-    tipo: string = 'text',
+    tipo = 'text',
   ) => (
     <div key={nombre}>
-      <label htmlFor={`nuevo-${nombre}`} className={claseLabel}>
+      <label htmlFor={`paciente-${nombre}`} className={claseLabel}>
         {etiqueta} <span className="text-rose-500">*</span>
       </label>
+
       <input
-        id={`nuevo-${nombre}`}
+        id={`paciente-${nombre}`}
         name={nombre}
         type={tipo}
         value={formulario[nombre]}
         onChange={handleChange}
         required
-        disabled={guardando}
-        max={tipo === 'date' ? new Date().toISOString().slice(0, 10) : undefined}
+        disabled={guardando || (editando && nombre === 'CI')}
+        max={
+          tipo === 'date'
+            ? new Date().toISOString().slice(0, 10)
+            : undefined
+        }
         aria-invalid={Boolean(errores[nombre])}
-        aria-describedby={errores[nombre] ? `error-${nombre}` : undefined}
+        aria-describedby={
+          errores[nombre] ? `error-${nombre}` : undefined
+        }
         className={claseInput}
       />
+
       {errores[nombre] && (
-        <p id={`error-${nombre}`} role="alert" className="mt-1.5 text-xs font-medium text-rose-600">
+        <p
+          id={`error-${nombre}`}
+          role="alert"
+          className="mt-1.5 text-xs font-medium text-rose-600"
+        >
           {errores[nombre]}
         </p>
       )}
@@ -165,28 +208,49 @@ export function FormularioPaciente({ onAgregar }: FormularioPacienteProps) {
       {campo('email', 'Email', 'email')}
       {campo('fecha_nacimiento', 'Fecha de nacimiento', 'date')}
       {campo('telefono', 'Teléfono', 'tel')}
+
       <div className="sm:col-span-2 lg:col-span-3">
         {campo('direccion', 'Dirección')}
       </div>
 
       {errorServidor && (
-        <p role="alert" className="sm:col-span-2 lg:col-span-3 text-sm text-rose-700">
+        <p
+          role="alert"
+          className="text-sm text-rose-700 sm:col-span-2 lg:col-span-3"
+        >
           {errorServidor}
         </p>
       )}
 
-      <div className="flex items-center justify-between gap-3 sm:col-span-2 lg:col-span-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2 lg:col-span-3">
         <p className="text-xs text-slate-500">
           <span className="text-rose-500">*</span> Todos los campos son obligatorios.
         </p>
 
-        <button
-          type="submit"
-          disabled={guardando}
-          className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {guardando ? 'Guardando...' : 'Registrar paciente'}
-        </button>
+        <div className="flex gap-2">
+          {onCancelar && (
+            <button
+              type="button"
+              disabled={guardando}
+              onClick={onCancelar}
+              className="rounded-xl border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 disabled:opacity-50"
+            >
+              Cancelar
+            </button>
+          )}
+
+          <button
+            type="submit"
+            disabled={guardando}
+            className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {guardando
+              ? 'Guardando...'
+              : editando
+                ? 'Guardar cambios'
+                : 'Registrar paciente'}
+          </button>
+        </div>
       </div>
     </form>
   );
