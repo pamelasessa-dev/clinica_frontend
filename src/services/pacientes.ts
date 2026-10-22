@@ -5,8 +5,11 @@ import type {
   CrearPacienteDTO,
 } from "../types/paciente";
 
-export async function obtenerPacientes(): Promise<PacienteApi[]> {
-  const response = await api.get<PacienteApi[]>("/pacientes/");
+export async function obtenerPacientes(query?: string): Promise<PacienteApi[]> {
+  const response = await api.get<PacienteApi[]>("/pacientes/", {
+    params: query ? { query } : {},
+  });
+
   return response.data;
 }
 

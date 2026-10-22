@@ -1,34 +1,34 @@
-
-import { create } from 'zustand';
+import { create } from "zustand";
+import { devtools } from "zustand/middleware";
 import type {
   Paciente,
   PacienteApi,
   CrearPacienteDTO,
-} from '../types/paciente';
+} from "../types/paciente";
 
 import {
   obtenerPacientes,
   crearPaciente,
   actualizarPaciente,
   eliminarPaciente as eliminarPacienteAPI,
-} from '../services/pacientes';
+} from "../services/pacientes";
 
-// Defino el estado y las acciones del store.
+// Estado y acciones del store.
 interface PacientesState {
   pacientes: Paciente[];
   cargando: boolean;
-  error: string;
+  error: string | null;
 
-  cargarPacientes: () => Promise<void>;
-  agregarPaciente: (datos: CrearPacienteDTO) => Promise<void>;
-  editarPaciente: (
+  cargar: (query?: string) => Promise<void>;
+  crear: (datos: CrearPacienteDTO) => Promise<void>;
+  actualizar: (
     id: string,
-    datos: Omit<CrearPacienteDTO, 'CI'>,
+    datos: Omit<CrearPacienteDTO, "CI">,
   ) => Promise<void>;
-  eliminarPaciente: (id: string) => Promise<void>;
+  eliminar: (id: string) => Promise<void>;
 }
 
-// Convierto los datos de la API al formato de mi aplicación.
+// Adaptamos la respuesta de la API al formato de la aplicación.
 function adaptarPaciente(p: PacienteApi): Paciente {
   return {
     id: String(p.CI),
@@ -38,70 +38,79 @@ function adaptarPaciente(p: PacienteApi): Paciente {
     telefono: p.telefono,
     fecha_nacimiento: p.fecha_nacimiento,
     direccion: p.direccion,
-    especialidadAsignada: 'Sin asignar',
-    ultimaCita: 'No disponible',
+    especialidadAsignada: "Sin asignar",
+    ultimaCita: "No disponible",
   };
 }
 
-// Creo el store de Zustand.
-export const usePacientesStore = create<PacientesState>()((set) => ({
-  // Estado inicial.
-  pacientes: [],
-  cargando: false,
-  error: '',
+export const usePacientesStore = create<PacientesState>()(
+  devtools(
+    (set) => ({
+      pacientes: [],
+      cargando: false,
+      error: null,
 
-  // Obtengo los pacientes del backend.
-  cargarPacientes: async () => {
-    set({ cargando: true, error: '' });
+      cargar: async (query) => {
+        set({ cargando: true, error: null }, false, "cargar/inicio");
 
-    try {
-      const datos = await obtenerPacientes();
+        try {
+          const datos = await obtenerPacientes(query);
 
-      set({
-        pacientes: datos.map(adaptarPaciente),
-      });
-    } catch (err) {
-      set({
-        error:
-          err instanceof Error
-            ? err.message
-            : 'No se pudieron cargar los pacientes',
-      });
-    } finally {
-      set({ cargando: false });
-    }
-  },
+          set({ pacientes: datos.map(adaptarPaciente) }, false, "cargar/exito");
+        } catch (err) {
+          set(
+            {
+              error:
+                err instanceof Error
+                  ? err.message
+                  : "No se pudieron cargar los pacientes",
+            },
+            false,
+            "cargar/error",
+          );
+        } finally {
+          set({ cargando: false }, false, "cargar/fin");
+        }
+      },
 
-  // Creo un paciente y actualizo el estado.
-  agregarPaciente: async (datos) => {
-    const creado = await crearPaciente(datos);
+      crear: async (datos) => {
+        const creado = await crearPaciente(datos);
 
-    set((state) => ({
-      pacientes: [...state.pacientes, adaptarPaciente(creado)],
-    }));
-  },
+        set(
+          (state) => ({
+            pacientes: [...state.pacientes, adaptarPaciente(creado)],
+          }),
+          false,
+          "crear",
+        );
+      },
 
-  // Actualizo un paciente existente.
-  editarPaciente: async (id, datos) => {
-    const actualizado = await actualizarPaciente(id, datos);
+      actualizar: async (id, datos) => {
+        const actualizado = await actualizarPaciente(id, datos);
 
-    set((state) => ({
-      pacientes: state.pacientes.map((paciente) =>
-        paciente.id === id
-          ? adaptarPaciente(actualizado)
-          : paciente,
-      ),
-    }));
-  },
+        set(
+          (state) => ({
+            pacientes: state.pacientes.map((paciente) =>
+              paciente.id === id ? adaptarPaciente(actualizado) : paciente,
+            ),
+          }),
+          false,
+          "actualizar",
+        );
+      },
 
-  // Elimino un paciente y lo quito del estado.
-  eliminarPaciente: async (id) => {
-    await eliminarPacienteAPI(id);
+      eliminar: async (id) => {
+        await eliminarPacienteAPI(id);
 
-    set((state) => ({
-      pacientes: state.pacientes.filter(
-        (paciente) => paciente.id !== id,
-      ),
-    }));
-  },
-}));
+        set(
+          (state) => ({
+            pacientes: state.pacientes.filter((paciente) => paciente.id !== id),
+          }),
+          false,
+          "eliminar",
+        );
+      },
+    }),
+    { name: "PacientesStore" },
+  ),
+);

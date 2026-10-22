@@ -1,37 +1,40 @@
-import { useState } from 'react';
-import type { ReactNode } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { citaSchema, URGENCIAS } from '../schemas/citaSchema';
-import type { CitaFormData, UrgenciaCita } from '../schemas/citaSchema';
-import { useMedicos } from '../hooks/useMedicos';
-import { obtenerFechaHoy } from '../utils/fecha';
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import { citaSchema, URGENCIAS } from "../schemas/citaSchema";
+import type { CitaFormData, UrgenciaCita } from "../schemas/citaSchema";
+
+import { useMedicos } from "../hooks/useMedicos";
+import { usePacientesStore } from "../store/pacientesStore";
+import { useCitasStore } from "../store/citasStore";
+import { obtenerFechaHoy } from "../utils/fecha";
 
 const etiquetasUrgencia: Record<UrgenciaCita, string> = {
-  baja: 'Baja',
-  media: 'Media',
-  alta: 'Alta',
-  critica: 'Crítica',
+  baja: "Baja",
+  media: "Media",
+  alta: "Alta",
+  critica: "Crítica",
 };
 
 const valoresIniciales: CitaFormData = {
-  pacienteNombre: '',
-  medicoId: '',
-  fecha: '',
-  hora: '',
-  motivo: '',
-  urgencia: 'media',
+  pacienteCI: "",
+  medicoId: "",
+  fecha: "",
+  hora: "",
+  motivo: "",
+  urgencia: "media",
 };
 
 const claseBase =
-  'w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:ring-4';
+  "w-full rounded-xl border bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none transition placeholder:text-slate-400 focus:ring-4";
 
-// Borde rojo si el campo tiene error
 const claseCampo = (hayError: boolean) =>
   `${claseBase} ${
     hayError
-      ? 'border-rose-500 focus:border-rose-500 focus:ring-rose-100'
-      : 'border-slate-300 focus:border-blue-500 focus:ring-blue-100'
+      ? "border-rose-500 focus:border-rose-500 focus:ring-rose-100"
+      : "border-slate-300 focus:border-blue-500 focus:ring-blue-100"
   }`;
 
 interface CampoProps {
@@ -71,10 +74,29 @@ interface FormularioCitaProps {
 }
 
 export function FormularioCita({ onCancelar }: FormularioCitaProps) {
-  const { medicos, cargando } = useMedicos();
+  const pacientes = usePacientesStore((state) => state.pacientes);
+  const cargandoPacientes = usePacientesStore((state) => state.cargando);
+  const errorPacientes = usePacientesStore((state) => state.error);
+  const cargarPacientes = usePacientesStore((state) => state.cargar);
+
+  const agregarCita = useCitasStore((state) => state.agregarCita);
+
+  const {
+    medicos,
+    cargando: cargandoMedicos,
+    error: errorMedicos,
+  } = useMedicos();
+
   const [citaConfirmada, setCitaConfirmada] = useState<CitaFormData | null>(
     null,
   );
+  const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (pacientes.length === 0) {
+      void cargarPacientes();
+    }
+  }, [pacientes.length, cargarPacientes]);
 
   const {
     register,
@@ -87,18 +109,39 @@ export function FormularioCita({ onCancelar }: FormularioCitaProps) {
   });
 
   const onSubmit = async (datos: CitaFormData) => {
-    // Simula el envío al backend (1,5 s)
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    setCitaConfirmada(datos);
+    setErrorEnvio(null);
+
+    try {
+      await agregarCita({
+        fecha_hora: `${datos.fecha}T${datos.hora}:00`,
+        CI_paciente: Number(datos.pacienteCI),
+        id_medico: Number(datos.medicoId),
+      });
+
+      setCitaConfirmada(datos);
+    } catch (error) {
+      setErrorEnvio(
+        error instanceof Error
+          ? error.message
+          : "No se pudo guardar la cita. Inténtalo nuevamente.",
+      );
+    }
   };
 
   const agendarOtra = () => {
     reset(valoresIniciales);
     setCitaConfirmada(null);
+    setErrorEnvio(null);
   };
 
   if (citaConfirmada) {
-    const medico = medicos.find((m) => m.id === citaConfirmada.medicoId);
+    const paciente = pacientes.find(
+      (item) => item.id === citaConfirmada.pacienteCI,
+    );
+
+    const medico = medicos.find(
+      (item) => String(item.id_medico) === citaConfirmada.medicoId,
+    );
 
     return (
       <section
@@ -114,7 +157,7 @@ export function FormularioCita({ onCancelar }: FormularioCitaProps) {
           </div>
 
           <h2 className="text-lg font-semibold text-slate-900">
-            ¡Cita agendada con éxito!
+            ¡Cita guardada correctamente!
           </h2>
         </div>
 
@@ -122,14 +165,18 @@ export function FormularioCita({ onCancelar }: FormularioCitaProps) {
           <div>
             <dt className="font-medium text-slate-500">Paciente</dt>
             <dd className="mt-0.5 text-slate-900">
-              {citaConfirmada.pacienteNombre}
+              {paciente
+                ? `${paciente.nombre} ${paciente.apellido}`
+                : `CI: ${citaConfirmada.pacienteCI}`}
             </dd>
           </div>
 
           <div>
             <dt className="font-medium text-slate-500">Médico</dt>
             <dd className="mt-0.5 text-slate-900">
-              {medico ? `${medico.nombre} · ${medico.especialidad}` : 'Sin datos'}
+              {medico
+                ? `${medico.nombre} ${medico.apellido} · ${medico.especialidad.nombre}`
+                : "Sin datos"}
             </dd>
           </div>
 
@@ -174,46 +221,59 @@ export function FormularioCita({ onCancelar }: FormularioCitaProps) {
       className="grid grid-cols-1 gap-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2 sm:p-6"
     >
       <Campo
-        id="pacienteNombre"
-        label="Nombre del paciente"
-        error={errors.pacienteNombre?.message}
+        id="pacienteCI"
+        label="Paciente"
+        error={errors.pacienteCI?.message}
       >
-        <input
-          id="pacienteNombre"
-          type="text"
-          placeholder="Ej: Ana García"
-          aria-invalid={Boolean(errors.pacienteNombre)}
-          aria-describedby={
-            errors.pacienteNombre ? 'pacienteNombre-error' : undefined
-          }
-          className={claseCampo(Boolean(errors.pacienteNombre))}
-          {...register('pacienteNombre')}
-        />
+        <select
+          id="pacienteCI"
+          aria-invalid={Boolean(errors.pacienteCI)}
+          className={claseCampo(Boolean(errors.pacienteCI))}
+          {...register("pacienteCI")}
+        >
+          <option value="">
+            {cargandoPacientes
+              ? "Cargando pacientes..."
+              : "Selecciona un paciente"}
+          </option>
+
+          {pacientes.map((paciente) => (
+            <option key={paciente.id} value={paciente.id}>
+              {paciente.nombre} {paciente.apellido} — CI: {paciente.id}
+            </option>
+          ))}
+        </select>
+
+        {errorPacientes && (
+          <p role="alert" className="mt-1.5 text-xs text-rose-600">
+            Error al cargar pacientes: {errorPacientes}
+          </p>
+        )}
       </Campo>
 
       <Campo id="medicoId" label="Médico" error={errors.medicoId?.message}>
         <select
           id="medicoId"
           aria-invalid={Boolean(errors.medicoId)}
-          aria-describedby={errors.medicoId ? 'medicoId-error' : undefined}
           className={claseCampo(Boolean(errors.medicoId))}
-          {...register('medicoId')}
+          {...register("medicoId")}
         >
-          {cargando ? (
-            <option value="" disabled>
-              Cargando médicos...
+          <option value="">
+            {cargandoMedicos ? "Cargando médicos..." : "Selecciona un médico"}
+          </option>
+
+          {medicos.map((medico) => (
+            <option key={medico.id_medico} value={String(medico.id_medico)}>
+              {medico.nombre} {medico.apellido} — {medico.especialidad.nombre}
             </option>
-          ) : (
-            <>
-              <option value="">Selecciona un médico</option>
-              {medicos.map((medico) => (
-                <option key={medico.id} value={medico.id}>
-                  {medico.nombre} — {medico.especialidad}
-                </option>
-              ))}
-            </>
-          )}
+          ))}
         </select>
+
+        {errorMedicos && (
+          <p role="alert" className="mt-1.5 text-xs text-rose-600">
+            Error al cargar médicos: {errorMedicos}
+          </p>
+        )}
       </Campo>
 
       <Campo id="fecha" label="Fecha" error={errors.fecha?.message}>
@@ -222,9 +282,8 @@ export function FormularioCita({ onCancelar }: FormularioCitaProps) {
           type="date"
           min={obtenerFechaHoy()}
           aria-invalid={Boolean(errors.fecha)}
-          aria-describedby={errors.fecha ? 'fecha-error' : undefined}
           className={claseCampo(Boolean(errors.fecha))}
-          {...register('fecha')}
+          {...register("fecha")}
         />
       </Campo>
 
@@ -233,9 +292,8 @@ export function FormularioCita({ onCancelar }: FormularioCitaProps) {
           id="hora"
           type="time"
           aria-invalid={Boolean(errors.hora)}
-          aria-describedby={errors.hora ? 'hora-error' : undefined}
           className={claseCampo(Boolean(errors.hora))}
-          {...register('hora')}
+          {...register("hora")}
         />
       </Campo>
 
@@ -244,7 +302,7 @@ export function FormularioCita({ onCancelar }: FormularioCitaProps) {
           id="urgencia"
           aria-invalid={Boolean(errors.urgencia)}
           className={claseCampo(Boolean(errors.urgencia))}
-          {...register('urgencia')}
+          {...register("urgencia")}
         >
           {URGENCIAS.map((urgencia) => (
             <option key={urgencia} value={urgencia}>
@@ -265,20 +323,36 @@ export function FormularioCita({ onCancelar }: FormularioCitaProps) {
             rows={4}
             placeholder="Describe brevemente el motivo (mínimo 10 caracteres)"
             aria-invalid={Boolean(errors.motivo)}
-            aria-describedby={errors.motivo ? 'motivo-error' : undefined}
             className={claseCampo(Boolean(errors.motivo))}
-            {...register('motivo')}
+            {...register("motivo")}
           />
         </Campo>
       </div>
 
+      {errorEnvio && (
+        <p
+          role="alert"
+          className="sm:col-span-2 rounded-lg bg-rose-50 p-3 text-sm text-rose-700"
+        >
+          No se pudo guardar la cita: {errorEnvio}
+        </p>
+      )}
+
       <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={
+            isSubmitting ||
+            cargandoPacientes ||
+            cargandoMedicos ||
+            Boolean(errorPacientes) ||
+            Boolean(errorMedicos) ||
+            pacientes.length === 0 ||
+            medicos.length === 0
+          }
           className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
         >
-          {isSubmitting ? 'Agendando...' : 'Agendar cita'}
+          {isSubmitting ? "Guardando cita..." : "Agendar cita"}
         </button>
 
         <button

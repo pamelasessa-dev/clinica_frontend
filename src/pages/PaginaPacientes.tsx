@@ -1,34 +1,36 @@
 import { useEffect, useState } from "react";
 import { usePacientesStore } from "../store/pacientesStore";
 import toast from "react-hot-toast";
-import type {
-  Paciente,
-  CrearPacienteDTO,
-} from "../types/paciente";
+import type { Paciente, CrearPacienteDTO } from "../types/paciente";
 import { PacienteCard } from "../components/PacienteCard";
 import { BuscadorPacientes } from "../components/BuscadorPacientes";
 import { FormularioPaciente } from "../components/FormularioPaciente";
 import { ModalConfirmacion } from "../components/ModalConfirmacion";
 import { extraerMensajeError } from "../lib/errorHandler";
-
+import { useFiltrosStore } from "../store/filtrosStore";
 
 export function PaginaPacientes() {
-  const pacientes = usePacientesStore((state) => state.pacientes);
-  const cargando = usePacientesStore((state) => state.cargando);
-  const error = usePacientesStore ((state) => state.error);
-  const cargarPacientes = usePacientesStore((state) => state.cargarPacientes);
-  const agregarPaciente = usePacientesStore((state) => state.agregarPaciente);
-  const editarPaciente = usePacientesStore((state) => state.editarPaciente);
-  const eliminarPaciente = usePacientesStore((state) => state.eliminarPaciente);
-  
-  const [busqueda, setBusqueda] = useState("");
-  const [pacienteEditando, setPacienteEditando] = useState<Paciente | null>(null);
-  const [pacienteAEliminar, setPacienteAEliminar] = useState<Paciente | null>(null);
+  const pacientes = usePacientesStore((s) => s.pacientes);
+  const cargando = usePacientesStore((s) => s.cargando);
+  const error = usePacientesStore((s) => s.error);
+  const cargar = usePacientesStore((s) => s.cargar);
+  const crear = usePacientesStore((s) => s.crear);
+  const actualizar = usePacientesStore((s) => s.actualizar);
+  const eliminar = usePacientesStore((s) => s.eliminar);
+
+  const busqueda = useFiltrosStore((s) => s.queryPacientes);
+  const setBusqueda = useFiltrosStore((s) => s.setQueryPacientes);
+  const [pacienteEditando, setPacienteEditando] = useState<Paciente | null>(
+    null,
+  );
+  const [pacienteAEliminar, setPacienteAEliminar] = useState<Paciente | null>(
+    null,
+  );
   const [eliminando, setEliminando] = useState(false);
 
   useEffect(() => {
-    void cargarPacientes();
-  }, [cargarPacientes]);
+    void cargar();
+  }, [cargar]);
 
   // Buscar por nombre, apellido o email
   const termino = busqueda.trim().toLowerCase();
@@ -45,33 +47,33 @@ export function PaginaPacientes() {
     setBusqueda("");
   };
 
-  // Crear o actualizar un paciente  
-const guardarPaciente = async (datos: CrearPacienteDTO): Promise<void> => {
-  try {
-    if (pacienteEditando) {
-      const idOriginal = pacienteEditando.id;
+  // Crear o actualizar un paciente
+  const guardarPaciente = async (datos: CrearPacienteDTO): Promise<void> => {
+    try {
+      if (pacienteEditando) {
+        const idOriginal = pacienteEditando.id;
 
-      await editarPaciente(idOriginal, {
-        nombre: datos.nombre,
-        apellido: datos.apellido,
-        email: datos.email,
-        fecha_nacimiento: datos.fecha_nacimiento,
-        direccion: datos.direccion,
-        telefono: datos.telefono,
-      });
+        await actualizar(idOriginal, {
+          nombre: datos.nombre,
+          apellido: datos.apellido,
+          email: datos.email,
+          fecha_nacimiento: datos.fecha_nacimiento,
+          direccion: datos.direccion,
+          telefono: datos.telefono,
+        });
 
-      setPacienteEditando(null);
-      toast.success('Paciente actualizado correctamente');
-    } else {
-      await agregarPaciente(datos);
+        setPacienteEditando(null);
+        toast.success("Paciente actualizado correctamente");
+      } else {
+        await crear(datos);
 
-      toast.success('Paciente registrado correctamente');
+        toast.success("Paciente registrado correctamente");
+      }
+    } catch (err) {
+      toast.error(extraerMensajeError(err));
+      throw err;
     }
-  } catch (err) {
-    toast.error(extraerMensajeError(err));
-    throw err;
-  }
-};
+  };
 
   // Abrir el modal de confirmación
   const solicitarEliminarPaciente = (id: string) => {
@@ -83,24 +85,24 @@ const guardarPaciente = async (datos: CrearPacienteDTO): Promise<void> => {
   };
 
   // Eliminar después de confirmar en el modal
-  
-const confirmarEliminarPaciente = async (): Promise<void> => {
-  if (!pacienteAEliminar || eliminando) return;
 
-  const id = pacienteAEliminar.id;
-  setEliminando(true);
+  const confirmarEliminarPaciente = async (): Promise<void> => {
+    if (!pacienteAEliminar || eliminando) return;
 
-  try {
-    await eliminarPaciente(id);
+    const id = pacienteAEliminar.id;
+    setEliminando(true);
 
-    setPacienteAEliminar(null);
-    toast.success('Paciente eliminado correctamente');
-  } catch (err) {
-    toast.error(extraerMensajeError(err));
-  } finally {
-    setEliminando(false);
-  }
-};
+    try {
+      await eliminar(id);
+
+      setPacienteAEliminar(null);
+      toast.success("Paciente eliminado correctamente");
+    } catch (err) {
+      toast.error(extraerMensajeError(err));
+    } finally {
+      setEliminando(false);
+    }
+  };
 
   // Estado de carga
   if (cargando) {
@@ -132,7 +134,7 @@ const confirmarEliminarPaciente = async (): Promise<void> => {
 
           <button
             type="button"
-            onClick={() => void cargarPacientes()}
+            onClick={() => void cargar()}
             className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >
             Reintentar
