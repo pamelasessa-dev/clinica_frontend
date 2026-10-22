@@ -1,8 +1,8 @@
-
-import { useEffect, useState } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
-import type { CrearPacienteDTO, Paciente } from '../types/paciente';
-import { extraerMensajeError } from '../lib/errorHandler';
+import { useEffect, useState } from "react";
+import type { ChangeEvent, FormEvent } from "react";
+import type { CrearPacienteDTO, Paciente } from "../types/paciente";
+import { extraerMensajeError } from "../lib/errorHandler";
+import { obtenerFechaHoy } from "../utils/fecha";
 
 interface FormularioPacienteProps {
   pacienteInicial?: Paciente | null;
@@ -25,19 +25,19 @@ type CampoFormulario = keyof FormularioValores;
 type ErroresFormulario = Partial<Record<CampoFormulario, string>>;
 
 const formularioInicial: FormularioValores = {
-  CI: '',
-  nombre: '',
-  apellido: '',
-  email: '',
-  fecha_nacimiento: '',
-  direccion: '',
-  telefono: '',
+  CI: "",
+  nombre: "",
+  apellido: "",
+  email: "",
+  fecha_nacimiento: "",
+  direccion: "",
+  telefono: "",
 };
 
 const claseInput =
-  'w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100';
+  "w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100";
 
-const claseLabel = 'mb-1.5 block text-sm font-medium text-slate-700';
+const claseLabel = "mb-1.5 block text-sm font-medium text-slate-700";
 
 export function FormularioPaciente({
   pacienteInicial = null,
@@ -48,7 +48,7 @@ export function FormularioPaciente({
     useState<FormularioValores>(formularioInicial);
   const [errores, setErrores] = useState<ErroresFormulario>({});
   const [guardando, setGuardando] = useState(false);
-  const [errorServidor, setErrorServidor] = useState('');
+  const [errorServidor, setErrorServidor] = useState("");
 
   const editando = pacienteInicial !== null;
 
@@ -69,7 +69,7 @@ export function FormularioPaciente({
     });
 
     setErrores({});
-    setErrorServidor('');
+    setErrorServidor("");
   }, [pacienteInicial]);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -77,7 +77,7 @@ export function FormularioPaciente({
 
     setFormulario((prev) => ({ ...prev, [name]: value }));
     setErrores((prev) => ({ ...prev, [name]: undefined }));
-    setErrorServidor('');
+    setErrorServidor("");
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -86,40 +86,36 @@ export function FormularioPaciente({
     const nuevosErrores: ErroresFormulario = {};
 
     if (!formulario.CI.trim() || !/^\d+$/.test(formulario.CI)) {
-      nuevosErrores.CI = 'Ingresa un CI numérico válido';
+      nuevosErrores.CI = "Ingresa un CI numérico válido";
     }
 
     if (!formulario.nombre.trim()) {
-      nuevosErrores.nombre = 'El nombre es obligatorio';
+      nuevosErrores.nombre = "El nombre es obligatorio";
     }
 
     if (!formulario.apellido.trim()) {
-      nuevosErrores.apellido = 'El apellido es obligatorio';
+      nuevosErrores.apellido = "El apellido es obligatorio";
     }
 
     if (
       !formulario.email.trim() ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formulario.email)
     ) {
-      nuevosErrores.email = 'Ingresa un email válido';
+      nuevosErrores.email = "Ingresa un email válido";
     }
 
     if (!formulario.fecha_nacimiento) {
-      nuevosErrores.fecha_nacimiento =
-        'La fecha de nacimiento es obligatoria';
-    } else if (
-      formulario.fecha_nacimiento >
-      new Date().toISOString().slice(0, 10)
-    ) {
-      nuevosErrores.fecha_nacimiento = 'La fecha no puede ser futura';
+      nuevosErrores.fecha_nacimiento = "La fecha de nacimiento es obligatoria";
+    } else if (formulario.fecha_nacimiento > obtenerFechaHoy()) {
+      nuevosErrores.fecha_nacimiento = "La fecha no puede ser futura";
     }
 
     if (!formulario.direccion.trim()) {
-      nuevosErrores.direccion = 'La dirección es obligatoria';
+      nuevosErrores.direccion = "La dirección es obligatoria";
     }
 
     if (!formulario.telefono.trim()) {
-      nuevosErrores.telefono = 'El teléfono es obligatorio';
+      nuevosErrores.telefono = "El teléfono es obligatorio";
     }
 
     if (Object.values(nuevosErrores).some(Boolean)) {
@@ -128,7 +124,7 @@ export function FormularioPaciente({
     }
 
     setGuardando(true);
-    setErrorServidor('');
+    setErrorServidor("");
 
     try {
       await onGuardar({
@@ -154,11 +150,7 @@ export function FormularioPaciente({
     }
   };
 
-  const campo = (
-    nombre: CampoFormulario,
-    etiqueta: string,
-    tipo = 'text',
-  ) => (
+  const campo = (nombre: CampoFormulario, etiqueta: string, tipo = "text") => (
     <div key={nombre}>
       <label htmlFor={`paciente-${nombre}`} className={claseLabel}>
         {etiqueta} <span className="text-rose-500">*</span>
@@ -171,16 +163,10 @@ export function FormularioPaciente({
         value={formulario[nombre]}
         onChange={handleChange}
         required
-        disabled={guardando || (editando && nombre === 'CI')}
-        max={
-          tipo === 'date'
-            ? new Date().toISOString().slice(0, 10)
-            : undefined
-        }
+        disabled={guardando || (editando && nombre === "CI")}
+        max={tipo === "date" ? obtenerFechaHoy() : undefined}
         aria-invalid={Boolean(errores[nombre])}
-        aria-describedby={
-          errores[nombre] ? `error-${nombre}` : undefined
-        }
+        aria-describedby={errores[nombre] ? `error-${nombre}` : undefined}
         className={claseInput}
       />
 
@@ -202,15 +188,15 @@ export function FormularioPaciente({
       noValidate
       className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3"
     >
-      {campo('CI', 'CI', 'number')}
-      {campo('nombre', 'Nombre')}
-      {campo('apellido', 'Apellido')}
-      {campo('email', 'Email', 'email')}
-      {campo('fecha_nacimiento', 'Fecha de nacimiento', 'date')}
-      {campo('telefono', 'Teléfono', 'tel')}
+      {campo("CI", "CI", "number")}
+      {campo("nombre", "Nombre")}
+      {campo("apellido", "Apellido")}
+      {campo("email", "Email", "email")}
+      {campo("fecha_nacimiento", "Fecha de nacimiento", "date")}
+      {campo("telefono", "Teléfono", "tel")}
 
       <div className="sm:col-span-2 lg:col-span-3">
-        {campo('direccion', 'Dirección')}
+        {campo("direccion", "Dirección")}
       </div>
 
       {errorServidor && (
@@ -224,7 +210,8 @@ export function FormularioPaciente({
 
       <div className="flex flex-wrap items-center justify-between gap-3 sm:col-span-2 lg:col-span-3">
         <p className="text-xs text-slate-500">
-          <span className="text-rose-500">*</span> Todos los campos son obligatorios.
+          <span className="text-rose-500">*</span> Todos los campos son
+          obligatorios.
         </p>
 
         <div className="flex gap-2">
@@ -245,10 +232,10 @@ export function FormularioPaciente({
             className="rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-60"
           >
             {guardando
-              ? 'Guardando...'
+              ? "Guardando..."
               : editando
-                ? 'Guardar cambios'
-                : 'Registrar paciente'}
+                ? "Guardar cambios"
+                : "Registrar paciente"}
           </button>
         </div>
       </div>

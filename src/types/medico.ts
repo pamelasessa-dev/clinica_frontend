@@ -1,6 +1,9 @@
-
 export interface Medico {
-  id: string;
+  id_medico: number;
   nombre: string;
-  especialidad: string;
+  apellido: string;
+  especialidad: {
+    id_especialidad: number;
+    nombre: string;
+  };
 }
