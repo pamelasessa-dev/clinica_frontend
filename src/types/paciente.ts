@@ -1,5 +1,6 @@
+import type { Cita } from "./citas";
 
-export type FiltroEstado = 'Todos';
+export type FiltroEstado = "Todos";
 
 export interface Paciente {
   id: string;
@@ -13,12 +14,8 @@ export interface Paciente {
   ultimaCita: string;
 }
 
-export interface NuevoPaciente {
-  nombre: string;
-  apellido: string;
-  email: string;
-}
-
+// Modelo resumido del frontend.
+export type NuevoPaciente = Pick<Paciente, "nombre" | "apellido" | "email">;
 
 export interface PacienteApi {
   CI: number;
@@ -30,29 +27,10 @@ export interface PacienteApi {
   email: string;
 }
 
-export interface CitaExpedienteApi {
-  id_cita: number;
-  fecha_hora: string;
-  estado: 'PROGRAMADA' | 'COMPLETADA' | 'CANCELADA';
-  medico: {
-    nombre: string;
-    apellido: string;
-    especialidad: {
-      nombre: string;
-    };
-  };
-}
+// El expediente trae las mismas citas que GET /citas/, sin el paciente.
+export type CitaExpedienteApi = Omit<Cita, "paciente">;
 
 export interface PacienteExpedienteApi extends PacienteApi {
   citas: CitaExpedienteApi[];
 }
 
-export interface CrearPacienteDTO {
-  CI: number;
-  nombre: string;
-  apellido: string;
-  fecha_nacimiento: string;
-  direccion: string;
-  telefono: string;
-  email: string;
-}

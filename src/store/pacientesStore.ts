@@ -3,9 +3,8 @@ import { devtools } from "zustand/middleware";
 import type {
   Paciente,
   PacienteApi,
-  CrearPacienteDTO,
-  ActualizarPacienteDTO,
 } from "../types/paciente";
+import type { CrearPacienteDTO, ActualizarPacienteDTO } from "../types/dtos";
 import { extraerMensajeError } from "../lib/errorHandler";
 
 import {

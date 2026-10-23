@@ -2,9 +2,8 @@ import { api } from "../lib/axios";
 import type {
   PacienteApi,
   PacienteExpedienteApi,
-  CrearPacienteDTO,
-  ActualizarPacienteDTO,
 } from "../types/paciente";
+import type { CrearPacienteDTO, ActualizarPacienteDTO } from "../types/dtos";
 
 export async function obtenerPacientes(
   query?: string,

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import type { CrearPacienteDTO, Paciente } from "../types/paciente";
+import type { Paciente } from "../types/paciente";
+import type { CrearPacienteDTO } from "../types/dtos";
 import { extraerMensajeError } from "../lib/errorHandler";
 import { obtenerFechaHoy } from "../utils/fecha";
 

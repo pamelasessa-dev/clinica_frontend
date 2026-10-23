@@ -10,6 +10,7 @@ import { useMedicos } from "../hooks/useMedicos";
 import { usePacientesStore } from "../store/pacientesStore";
 import { useCitasStore } from "../store/citasStore";
 import { obtenerFechaHoy } from "../utils/fecha";
+import { extraerMensajeError } from "../lib/errorHandler";
 
 const etiquetasUrgencia: Record<UrgenciaCita, string> = {
   baja: "Baja",
@@ -119,12 +120,8 @@ export function FormularioCita({ onCancelar }: FormularioCitaProps) {
       });
 
       setCitaConfirmada(datos);
-    } catch (error) {
-      setErrorEnvio(
-        error instanceof Error
-          ? error.message
-          : "No se pudo guardar la cita. Inténtalo nuevamente.",
-      );
+    } catch (error: unknown) {
+      setErrorEnvio(extraerMensajeError(error));
     }
   };
 

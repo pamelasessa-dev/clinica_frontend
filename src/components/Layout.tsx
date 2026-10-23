@@ -12,6 +12,7 @@ const ITEMS_NAVEGACION: ItemNavegacion[] = [
   { to: '/', etiqueta: 'Dashboard', icono: '📊', fin: true },
   { to: '/pacientes', etiqueta: 'Pacientes', icono: '👥' },
   { to: '/citas/nueva', etiqueta: 'Nueva cita', icono: '📅' },
+  { to: '/reportes', etiqueta: 'Reportes', icono: '📈' },
 ];
 
 interface EstadoEnlace {

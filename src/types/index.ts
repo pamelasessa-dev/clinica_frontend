@@ -1,5 +1,4 @@
-
-export type Tendencia = 'positiva' | 'negativa' | 'neutra';
+export type Tendencia = "positiva" | "negativa" | "neutra";
 
 export interface Metrica {
   id: string;

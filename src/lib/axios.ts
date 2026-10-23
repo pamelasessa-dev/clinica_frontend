@@ -17,15 +17,17 @@ api.interceptors.request.use((config) => {
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    const status = error.response?.status;
-    const requestUrl = error.config?.url ?? "";
+  (error: unknown) => {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      const requestUrl = error.config?.url ?? "";
 
-    const isLoginRequest = requestUrl.includes("/auth/login");
+      const isLoginRequest = requestUrl.includes("/auth/login");
 
-    if (status === 401 && !isLoginRequest) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+      if (status === 401 && !isLoginRequest) {
+        localStorage.removeItem("token");
+        window.location.href = "/login";
+      }
     }
 
     return Promise.reject(error);
