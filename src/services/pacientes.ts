@@ -3,11 +3,16 @@ import type {
   PacienteApi,
   PacienteExpedienteApi,
   CrearPacienteDTO,
+  ActualizarPacienteDTO,
 } from "../types/paciente";
 
-export async function obtenerPacientes(query?: string): Promise<PacienteApi[]> {
+export async function obtenerPacientes(
+  query?: string,
+  signal?: AbortSignal,
+): Promise<PacienteApi[]> {
   const response = await api.get<PacienteApi[]>("/pacientes/", {
     params: query ? { query } : {},
+    signal,
   });
 
   return response.data;
@@ -31,7 +36,7 @@ export async function crearPaciente(
 
 export async function actualizarPaciente(
   CI: string,
-  datos: Partial<Omit<CrearPacienteDTO, "CI">>,
+  datos: ActualizarPacienteDTO,
 ): Promise<PacienteApi> {
   const response = await api.put<PacienteApi>(`/pacientes/${CI}`, datos);
   return response.data;

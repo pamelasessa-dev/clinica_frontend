@@ -8,6 +8,7 @@ import { FormularioPaciente } from "../components/FormularioPaciente";
 import { ModalConfirmacion } from "../components/ModalConfirmacion";
 import { extraerMensajeError } from "../lib/errorHandler";
 import { useFiltrosStore } from "../store/filtrosStore";
+import { useDebounce } from "../hooks/useDebounce";
 
 export function PaginaPacientes() {
   const pacientes = usePacientesStore((s) => s.pacientes);
@@ -20,31 +21,29 @@ export function PaginaPacientes() {
 
   const busqueda = useFiltrosStore((s) => s.queryPacientes);
   const setBusqueda = useFiltrosStore((s) => s.setQueryPacientes);
+  const resetFiltros = useFiltrosStore((s) => s.resetFiltros);
+  const busquedaDebounced = useDebounce(busqueda, 350);
+
   const [pacienteEditando, setPacienteEditando] = useState<Paciente | null>(
     null,
   );
+
   const [pacienteAEliminar, setPacienteAEliminar] = useState<Paciente | null>(
     null,
   );
+
   const [eliminando, setEliminando] = useState(false);
 
+  // Cargar pacientes y buscar cuando termina el debounce
   useEffect(() => {
-    void cargar();
-  }, [cargar]);
+    void cargar(busquedaDebounced.trim());
+  }, [cargar, busquedaDebounced]);
 
-  // Buscar por nombre, apellido o email
-  const termino = busqueda.trim().toLowerCase();
-
-  const pacientesFiltrados = pacientes.filter((paciente) => {
-    return (
-      paciente.nombre.toLowerCase().includes(termino) ||
-      paciente.apellido.toLowerCase().includes(termino) ||
-      paciente.email.toLowerCase().includes(termino)
-    );
-  });
+  // Los pacientes ya vienen filtrados desde el backend
+  const pacientesFiltrados = pacientes;
 
   const limpiarBusqueda = () => {
-    setBusqueda("");
+    resetFiltros();
   };
 
   // Crear o actualizar un paciente
@@ -66,7 +65,6 @@ export function PaginaPacientes() {
         toast.success("Paciente actualizado correctamente");
       } else {
         await crear(datos);
-
         toast.success("Paciente registrado correctamente");
       }
     } catch (err) {
@@ -85,7 +83,6 @@ export function PaginaPacientes() {
   };
 
   // Eliminar después de confirmar en el modal
-
   const confirmarEliminarPaciente = async (): Promise<void> => {
     if (!pacienteAEliminar || eliminando) return;
 
@@ -94,7 +91,6 @@ export function PaginaPacientes() {
 
     try {
       await eliminar(id);
-
       setPacienteAEliminar(null);
       toast.success("Paciente eliminado correctamente");
     } catch (err) {
@@ -104,48 +100,7 @@ export function PaginaPacientes() {
     }
   };
 
-  // Estado de carga
-  if (cargando) {
-    return (
-      <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
-        <p
-          role="status"
-          className="mx-auto max-w-7xl rounded-xl bg-white p-6 text-slate-600 shadow-sm"
-        >
-          Cargando pacientes...
-        </p>
-      </main>
-    );
-  }
-
-  // Estado de error al cargar
-  if (error) {
-    return (
-      <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
-        <section
-          role="alert"
-          className="mx-auto max-w-7xl rounded-xl border border-rose-200 bg-white p-6"
-        >
-          <h1 className="text-lg font-semibold text-slate-900">
-            No se pudieron cargar los pacientes
-          </h1>
-
-          <p className="mt-2 text-sm text-rose-700">{error}</p>
-
-          <button
-            type="button"
-            onClick={() => void cargar()}
-            className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-          >
-            Reintentar
-          </button>
-        </section>
-      </main>
-    );
-  }
-
-  const hayBusquedaActiva = busqueda.trim() !== "";
-
+  // Mostrar el error sin desmontar la página ni el buscador
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
@@ -161,6 +116,28 @@ export function PaginaPacientes() {
             Consulta y administra la información de tus pacientes.
           </p>
         </header>
+
+        {/* Error de carga */}
+        {error && (
+          <section
+            role="alert"
+            className="mb-6 rounded-xl border border-rose-200 bg-white p-6"
+          >
+            <h2 className="text-lg font-semibold text-slate-900">
+              No se pudieron cargar los pacientes
+            </h2>
+
+            <p className="mt-2 text-sm text-rose-700">{error}</p>
+
+            <button
+              type="button"
+              onClick={() => void cargar(busquedaDebounced.trim())}
+              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            >
+              Reintentar
+            </button>
+          </section>
+        )}
 
         {/* Formulario de creación y edición */}
         <section
@@ -184,12 +161,16 @@ export function PaginaPacientes() {
         {/* Buscador */}
         <section className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-            <BuscadorPacientes value={busqueda} onChange={setBusqueda} />
+            <BuscadorPacientes
+              value={busqueda}
+              onChange={setBusqueda}
+              cargando={cargando}
+            />
 
             <button
               type="button"
               onClick={limpiarBusqueda}
-              disabled={!hayBusquedaActiva}
+              disabled={busqueda.trim() === ""}
               className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Limpiar búsqueda
@@ -226,27 +207,30 @@ export function PaginaPacientes() {
             ))}
           </section>
         ) : (
-          <section className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-            <h2 className="text-lg font-semibold text-slate-900">
-              No se encontraron pacientes
-            </h2>
+          !cargando &&
+          !error && (
+            <section className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+              <h2 className="text-lg font-semibold text-slate-900">
+                No se encontraron pacientes
+              </h2>
 
-            <p className="mt-2 text-sm text-slate-500">
-              {pacientes.length === 0
-                ? "La API no devolvió pacientes."
-                : "Prueba con otro nombre, apellido o email."}
-            </p>
+              <p className="mt-2 text-sm text-slate-500">
+                {busqueda.trim() === ""
+                  ? "La API no devolvió pacientes."
+                  : "Prueba con otro nombre, apellido o email."}
+              </p>
 
-            {hayBusquedaActiva && (
-              <button
-                type="button"
-                onClick={limpiarBusqueda}
-                className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                Limpiar búsqueda
-              </button>
-            )}
-          </section>
+              {busqueda.trim() !== "" && (
+                <button
+                  type="button"
+                  onClick={limpiarBusqueda}
+                  className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Limpiar búsqueda
+                </button>
+              )}
+            </section>
+          )
         )}
       </div>
 

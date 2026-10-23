@@ -4,7 +4,9 @@ import type {
   Paciente,
   PacienteApi,
   CrearPacienteDTO,
+  ActualizarPacienteDTO,
 } from "../types/paciente";
+import { extraerMensajeError } from "../lib/errorHandler";
 
 import {
   obtenerPacientes,
@@ -21,10 +23,7 @@ interface PacientesState {
 
   cargar: (query?: string) => Promise<void>;
   crear: (datos: CrearPacienteDTO) => Promise<void>;
-  actualizar: (
-    id: string,
-    datos: Omit<CrearPacienteDTO, "CI">,
-  ) => Promise<void>;
+  actualizar: (id: string, datos: ActualizarPacienteDTO) => Promise<void>;
   eliminar: (id: string) => Promise<void>;
 }
 
@@ -43,6 +42,10 @@ function adaptarPaciente(p: PacienteApi): Paciente {
   };
 }
 
+// Petición de búsqueda en curso. Al lanzar otra se cancela la anterior para
+// que una respuesta lenta no pise a la más reciente.
+let cargaEnCurso: AbortController | null = null;
+
 export const usePacientesStore = create<PacientesState>()(
   devtools(
     (set) => ({
@@ -51,25 +54,30 @@ export const usePacientesStore = create<PacientesState>()(
       error: null,
 
       cargar: async (query) => {
+        cargaEnCurso?.abort();
+
+        const controlador = new AbortController();
+        cargaEnCurso = controlador;
+
         set({ cargando: true, error: null }, false, "cargar/inicio");
 
         try {
-          const datos = await obtenerPacientes(query);
+          const datos = await obtenerPacientes(query, controlador.signal);
+
+          if (controlador.signal.aborted) return;
 
           set({ pacientes: datos.map(adaptarPaciente) }, false, "cargar/exito");
-        } catch (err) {
-          set(
-            {
-              error:
-                err instanceof Error
-                  ? err.message
-                  : "No se pudieron cargar los pacientes",
-            },
-            false,
-            "cargar/error",
-          );
+        } catch (err: unknown) {
+          if (controlador.signal.aborted) return;
+
+          set({ error: extraerMensajeError(err) }, false, "cargar/error");
         } finally {
-          set({ cargando: false }, false, "cargar/fin");
+          // Solo la petición vigente apaga el indicador de carga; una
+          // petición cancelada no debe apagarlo mientras otra sigue en curso.
+          if (cargaEnCurso === controlador) {
+            cargaEnCurso = null;
+            set({ cargando: false }, false, "cargar/fin");
+          }
         }
       },
 

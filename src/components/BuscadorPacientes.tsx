@@ -3,15 +3,17 @@ import type { ChangeEvent } from "react";
 interface BuscadorPacientesProps {
   value: string;
   onChange: (value: string) => void;
+  cargando?: boolean;
 }
 
 export function BuscadorPacientes({
   value,
   onChange,
+  cargando = false,
 }: BuscadorPacientesProps) {
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     onChange(event.target.value);
-  }
+  };
   return (
     <div className="w-full">
       <label
@@ -42,6 +44,17 @@ export function BuscadorPacientes({
           placeholder="Nombre, apellido o email..."
           className="w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
         />
+
+        {/* Siempre ocupa su espacio para que no se mueva el contenido */}
+        <span
+          aria-hidden="true"
+          className={`size-4 shrink-0 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600 transition-opacity ${
+            cargando ? "opacity-100" : "opacity-0"
+          }`}
+        />
+        <span role="status" className="sr-only">
+          {cargando ? "Buscando pacientes..." : ""}
+        </span>
       </div>
     </div>
   );
