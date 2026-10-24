@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import type { Cita, EstadoCita, CrearCitaDTO } from "../types/citas";
+import type { Cita, EstadoCita } from "../types/citas";
+import type { CrearCitaDTO } from "../types/dtos";
 import {
   obtenerCitasPorPaciente,
   crearCita,

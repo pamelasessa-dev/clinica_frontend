@@ -1,11 +1,9 @@
-import { Link } from 'react-router';
+import { Link } from "react-router";
 
 export function PaginaNotFound() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-slate-50 px-4 py-8 text-center">
-      <p aria-hidden="true" className="text-7xl">
-        
-      </p>
+      <p aria-hidden="true" className="text-7xl"></p>
 
       <h1 className="mt-4 text-5xl font-bold tracking-tight text-slate-900">
         404

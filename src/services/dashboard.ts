@@ -1,5 +1,4 @@
-
-import { api } from '../lib/axios';
+import { api } from "../lib/axios";
 
 interface PacienteApi {
   CI: number;
@@ -11,7 +10,7 @@ interface MedicoApi {
 
 interface CitaApi {
   id_cita: number;
-  estado: 'PROGRAMADA' | 'COMPLETADA' | 'CANCELADA';
+  estado: "PROGRAMADA" | "COMPLETADA" | "CANCELADA";
 }
 
 interface RespuestaCitasApi {
@@ -32,13 +31,13 @@ export async function obtenerMetricasDashboard(): Promise<MetricasDashboard> {
     respuestaProgramadas,
     respuestaCompletadas,
   ] = await Promise.all([
-    api.get<PacienteApi[]>('/pacientes/'),
-    api.get<MedicoApi[]>('/medicos/'),
-    api.get<RespuestaCitasApi>('/citas/', {
-      params: { estado: 'PROGRAMADA' },
+    api.get<PacienteApi[]>("/pacientes/"),
+    api.get<MedicoApi[]>("/medicos/"),
+    api.get<RespuestaCitasApi>("/citas/", {
+      params: { estado: "PROGRAMADA" },
     }),
-    api.get<RespuestaCitasApi>('/citas/', {
-      params: { estado: 'COMPLETADA' },
+    api.get<RespuestaCitasApi>("/citas/", {
+      params: { estado: "COMPLETADA" },
     }),
   ]);
 

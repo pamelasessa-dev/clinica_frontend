@@ -1,5 +1,5 @@
-import { useNavigate } from 'react-router';
-import { FormularioCita } from '../components/FormularioCita';
+import { useNavigate } from "react-router";
+import { FormularioCita } from "../components/FormularioCita";
 
 export function PaginaNuevaCita() {
   const navigate = useNavigate();

@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
-import { PaginaNotFound } from './PaginaNotFound';
-import { obtenerExpedientePaciente } from '../services/pacientes';
-import type { PacienteExpedienteApi } from '../types/paciente';
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router";
+import { PaginaNotFound } from "./PaginaNotFound";
+import { obtenerExpedientePaciente } from "../services/pacientes";
+import type { PacienteExpedienteApi } from "../types/paciente";
+import { extraerMensajeError } from "../lib/errorHandler";
 
 interface DatoDetalleProps {
   etiqueta: string;
@@ -12,18 +13,16 @@ interface DatoDetalleProps {
 function DatoDetalle({ etiqueta, valor }: DatoDetalleProps) {
   return (
     <div>
-      <dt className="text-sm font-medium text-slate-500">
-        {etiqueta}
-      </dt>
+      <dt className="text-sm font-medium text-slate-500">{etiqueta}</dt>
       <dd className="mt-1 text-slate-900">{valor}</dd>
     </div>
   );
 }
 
 function formatearFecha(fecha: string): string {
-  return new Date(fecha).toLocaleString('es-UY', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
+  return new Date(fecha).toLocaleString("es-UY", {
+    dateStyle: "medium",
+    timeStyle: "short",
   });
 }
 
@@ -31,30 +30,27 @@ export function PaginaDetallePaciente() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [paciente, setPaciente] =
-    useState<PacienteExpedienteApi | null>(null);
+  const [paciente, setPaciente] = useState<PacienteExpedienteApi | null>(null);
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const cargarExpediente = useCallback(async () => {
     if (!id || !/^\d+$/.test(id)) {
       setPaciente(null);
-      setError('El identificador del paciente no es válido.');
+      setError("El identificador del paciente no es válido.");
       setCargando(false);
       return;
     }
 
     setCargando(true);
-    setError('');
+    setError("");
 
     try {
       const datos = await obtenerExpedientePaciente(id);
       setPaciente(datos);
-    } catch {
+    } catch (err: unknown) {
       setPaciente(null);
-      setError(
-        'No se pudo cargar el expediente. Comprueba la conexión e inténtalo de nuevo.',
-      );
+      setError(extraerMensajeError(err));
     } finally {
       setCargando(false);
     }
@@ -134,9 +130,7 @@ export function PaginaDetallePaciente() {
               {paciente.nombre} {paciente.apellido}
             </h1>
 
-            <p className="mt-2 text-sm text-slate-500">
-              CI: {paciente.CI}
-            </p>
+            <p className="mt-2 text-sm text-slate-500">CI: {paciente.CI}</p>
           </header>
 
           <section aria-label="Datos del paciente">
@@ -145,22 +139,13 @@ export function PaginaDetallePaciente() {
             </h2>
 
             <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-              <DatoDetalle
-                etiqueta="Email"
-                valor={paciente.email}
-              />
-              <DatoDetalle
-                etiqueta="Teléfono"
-                valor={paciente.telefono}
-              />
+              <DatoDetalle etiqueta="Email" valor={paciente.email} />
+              <DatoDetalle etiqueta="Teléfono" valor={paciente.telefono} />
               <DatoDetalle
                 etiqueta="Fecha de nacimiento"
                 valor={formatearFecha(paciente.fecha_nacimiento)}
               />
-              <DatoDetalle
-                etiqueta="Dirección"
-                valor={paciente.direccion}
-              />
+              <DatoDetalle etiqueta="Dirección" valor={paciente.direccion} />
             </dl>
           </section>
 
@@ -178,10 +163,7 @@ export function PaginaDetallePaciente() {
                   etiqueta="Fecha y hora"
                   valor={formatearFecha(ultimaCita.fecha_hora)}
                 />
-                <DatoDetalle
-                  etiqueta="Estado"
-                  valor={ultimaCita.estado}
-                />
+                <DatoDetalle etiqueta="Estado" valor={ultimaCita.estado} />
                 <DatoDetalle
                   etiqueta="Médico"
                   valor={`${ultimaCita.medico.nombre} ${ultimaCita.medico.apellido}`}
@@ -217,8 +199,7 @@ export function PaginaDetallePaciente() {
                       {formatearFecha(cita.fecha_hora)}
                     </p>
                     <p className="mt-1 text-sm text-slate-600">
-                      Dr./Dra. {cita.medico.nombre}{' '}
-                      {cita.medico.apellido}
+                      Dr./Dra. {cita.medico.nombre} {cita.medico.apellido}
                     </p>
                     <p className="text-sm text-slate-600">
                       {cita.medico.especialidad.nombre}

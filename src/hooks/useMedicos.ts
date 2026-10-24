@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { Medico } from "../types/medico";
 import { obtenerMedicos } from "../services/medicos";
+import { extraerMensajeError } from "../lib/errorHandler";
 
 interface UseMedicosResultado {
   medicos: Medico[];
@@ -23,13 +24,9 @@ export function useMedicos(): UseMedicosResultado {
         if (activo) {
           setMedicos(datos);
         }
-      } catch (err) {
+      } catch (err: unknown) {
         if (activo) {
-          setError(
-            err instanceof Error
-              ? err.message
-              : "No se pudieron cargar los médicos",
-          );
+          setError(extraerMensajeError(err));
         }
       } finally {
         if (activo) {

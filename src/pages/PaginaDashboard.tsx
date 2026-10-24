@@ -4,6 +4,7 @@ import MetricCard from "../components/MetricCard";
 import StatusBadge from "../components/StatusBadge";
 import type { Metrica } from "../types";
 import { obtenerMetricasDashboard } from "../services/dashboard";
+import { extraerMensajeError } from "../lib/errorHandler";
 
 export default function PaginaDashboard() {
   const [mantenimiento, setMantenimiento] = useState(false);
@@ -52,10 +53,8 @@ export default function PaginaDashboard() {
           icono: "✅",
         },
       ]);
-    } catch (err) {
-      setError(
-        "No se pudieron cargar las métricas. Comprueba tu conexión e inténtalo de nuevo.",
-      );
+    } catch (err: unknown) {
+      setError(extraerMensajeError(err));
     } finally {
       setCargando(false);
     }
@@ -155,6 +154,15 @@ export default function PaginaDashboard() {
               ))}
             </div>
           )}
+
+          <div className="mt-6 flex justify-end">
+            <Link
+              to="/reportes"
+              className="text-sm font-semibold text-blue-700 transition hover:text-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+            >
+              Ver reportes completos →
+            </Link>
+          </div>
         </section>
       </div>
     </main>

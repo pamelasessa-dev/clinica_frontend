@@ -1,7 +1,8 @@
-
-import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
-import { api } from '../lib/axios';
+import { useState, type FormEvent } from "react";
+import axios from "axios";
+import { useNavigate } from "react-router";
+import { api } from "../lib/axios";
+import { extraerMensajeError } from "../lib/errorHandler";
 
 interface LoginResponse {
   token: string;
@@ -10,67 +11,50 @@ interface LoginResponse {
 export function PaginaLogin() {
   const navigate = useNavigate();
 
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setError('');
+    setError("");
 
     if (!email.trim() || !password) {
-      setError('Completá el correo y la contraseña.');
+      setError("Completá el correo y la contraseña.");
       return;
     }
 
     try {
       setLoading(true);
 
-      const response = await api.post<LoginResponse>(
-        '/auth/login',
-        {
-          email: email.trim(),
-          password,
-        }
-      );
+      const response = await api.post<LoginResponse>("/auth/login", {
+        email: email.trim(),
+        password,
+      });
 
       const token = response.data.token;
 
       if (!token) {
-        setError('El servidor no devolvió un token de acceso.');
+        setError("El servidor no devolvió un token de acceso.");
         return;
       }
 
-      localStorage.setItem('token', token);
-      navigate('/', { replace: true });
+      localStorage.setItem("token", token);
+      navigate("/", { replace: true });
     } catch (err: unknown) {
-      if (
-        typeof err === 'object' &&
-        err !== null &&
-        'response' in err
-      ) {
-        const response = (
-          err as {
-            response?: {
-              status?: number;
-              data?: { message?: string };
-            };
-          }
-        ).response;
-
-        if (response?.status === 401) {
-          setError('Correo o contraseña incorrectos.');
+      if (axios.isAxiosError(err) && err.response) {
+        if (err.response.status === 401) {
+          setError("Correo o contraseña incorrectos.");
         } else {
-          setError(
-            response?.data?.message ??
-              'No se pudo iniciar sesión. Intentá nuevamente.'
-          );
+          setError(extraerMensajeError(err));
         }
-      } else {
+      } else if (axios.isAxiosError(err)) {
         setError(
-          'No se pudo conectar con el servidor. Verificá que el backend esté funcionando.'
+          "No se pudo conectar con el servidor. Verificá que el backend esté funcionando.",
         );
+      } else {
+        setError(extraerMensajeError(err));
       }
     } finally {
       setLoading(false);
@@ -151,7 +135,7 @@ export function PaginaLogin() {
             disabled={loading}
             className="w-full rounded-lg bg-teal-700 px-4 py-3 font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? 'Ingresando...' : 'Iniciar sesión'}
+            {loading ? "Ingresando..." : "Iniciar sesión"}
           </button>
         </form>
 

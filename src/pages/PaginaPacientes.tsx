@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { usePacientesStore } from "../store/pacientesStore";
 import toast from "react-hot-toast";
-import type { Paciente, CrearPacienteDTO } from "../types/paciente";
+import type { Paciente } from "../types/paciente";
+import type { CrearPacienteDTO } from "../types/dtos";
 import { PacienteCard } from "../components/PacienteCard";
 import { BuscadorPacientes } from "../components/BuscadorPacientes";
 import { FormularioPaciente } from "../components/FormularioPaciente";
@@ -100,7 +101,6 @@ export function PaginaPacientes() {
     }
   };
 
-  // Mostrar el error sin desmontar la página ni el buscador
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">

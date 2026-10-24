@@ -1,9 +1,10 @@
 import { api } from "../lib/axios";
-import type { Cita, CrearCitaDTO, EstadoCita } from "../types/citas";
-
-interface RespuestaCitas {
-  data: Cita[];
-}
+import type {
+  Cita,
+  EstadoCita,
+  RespuestaCitas,
+} from "../types/citas";
+import type { CrearCitaDTO } from "../types/dtos";
 
 export async function obtenerCitas(estado?: EstadoCita): Promise<Cita[]> {
   const response = await api.get<RespuestaCitas>("/citas/", {
@@ -22,9 +23,6 @@ export async function obtenerCitasPorPaciente(CI: number): Promise<Cita[]> {
 export async function crearCita(datos: CrearCitaDTO): Promise<Cita> {
   const response = await api.post<Cita>("/citas/", datos);
 
-  // El backend devuelve la cita creada, pero sin los datos
-  // relacionados del paciente y del médico.
-  // Recargamos la lista para obtener la estructura completa.
   const citas = await obtenerCitas();
 
   const creada = citas.find((cita) => cita.id_cita === response.data.id_cita);

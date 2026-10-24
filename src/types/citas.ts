@@ -18,8 +18,8 @@ export interface Cita {
   };
 }
 
-export interface CrearCitaDTO {
-  fecha_hora: string;
-  CI_paciente: number;
-  id_medico: number;
+// Estructura que devuelve GET /citas/ (el backend no pagina esta lista).
+export interface RespuestaCitas {
+  data: Cita[];
 }
+
