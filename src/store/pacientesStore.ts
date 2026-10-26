@@ -34,6 +34,7 @@ function adaptarPaciente(p: PacienteApi): Paciente {
     apellido: p.apellido,
     email: p.email,
     telefono: p.telefono,
+    estado: p.estado,
     fecha_nacimiento: p.fecha_nacimiento,
     direccion: p.direccion,
     especialidadAsignada: "Sin asignar",

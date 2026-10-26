@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import type { ChangeEvent, FormEvent } from "react";
-import type { Paciente } from "../types/paciente";
+import type { EstadoPaciente, Paciente } from "../types/paciente";
+import { ESTADOS_PACIENTE, etiquetasPorEstado } from "../constants/estados";
 import type { CrearPacienteDTO } from "../types/dtos";
 import { extraerMensajeError } from "../lib/errorHandler";
 import { obtenerFechaHoy } from "../utils/fecha";
@@ -13,6 +14,7 @@ interface FormularioPacienteProps {
 
 type FormularioValores = {
   CI: string;
+  estado: EstadoPaciente;
   nombre: string;
   apellido: string;
   email: string;
@@ -21,12 +23,13 @@ type FormularioValores = {
   telefono: string;
 };
 
-type CampoFormulario = keyof FormularioValores;
+type CampoFormulario = Exclude<keyof FormularioValores, "estado">;
 
 type ErroresFormulario = Partial<Record<CampoFormulario, string>>;
 
 const formularioInicial: FormularioValores = {
   CI: "",
+  estado: "activo",
   nombre: "",
   apellido: "",
   email: "",
@@ -61,6 +64,7 @@ export function FormularioPaciente({
 
     setFormulario({
       CI: pacienteInicial.id,
+      estado: pacienteInicial.estado,
       nombre: pacienteInicial.nombre,
       apellido: pacienteInicial.apellido,
       email: pacienteInicial.email,
@@ -74,10 +78,19 @@ export function FormularioPaciente({
   }, [pacienteInicial]);
 
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target;
+    const { value } = event.target;
+    const name = event.target.name as CampoFormulario;
 
     setFormulario((prev) => ({ ...prev, [name]: value }));
     setErrores((prev) => ({ ...prev, [name]: undefined }));
+    setErrorServidor("");
+  };
+
+  const handleEstadoChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    setFormulario((prev) => ({
+      ...prev,
+      estado: event.target.value as EstadoPaciente,
+    }));
     setErrorServidor("");
   };
 
@@ -130,6 +143,7 @@ export function FormularioPaciente({
     try {
       await onGuardar({
         CI: Number(formulario.CI),
+        estado: formulario.estado,
         nombre: formulario.nombre.trim(),
         apellido: formulario.apellido.trim(),
         email: formulario.email.trim(),
@@ -192,6 +206,24 @@ export function FormularioPaciente({
       {campo("CI", "CI", "number")}
       {campo("nombre", "Nombre")}
       {campo("apellido", "Apellido")}
+      <div>
+        <label htmlFor="paciente-estado" className={claseLabel}>
+          Estado <span className="text-rose-500">*</span>
+        </label>
+        <select
+          id="paciente-estado"
+          value={formulario.estado}
+          onChange={handleEstadoChange}
+          disabled={guardando}
+          className={claseInput}
+        >
+          {ESTADOS_PACIENTE.map((estado) => (
+            <option key={estado} value={estado}>
+              {etiquetasPorEstado[estado]}
+            </option>
+          ))}
+        </select>
+      </div>
       {campo("email", "Email", "email")}
       {campo("fecha_nacimiento", "Fecha de nacimiento", "date")}
       {campo("telefono", "Teléfono", "tel")}
