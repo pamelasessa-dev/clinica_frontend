@@ -1,4 +1,5 @@
-import { NavLink, Outlet } from 'react-router';
+import { NavLink, Outlet, useNavigate } from 'react-router';
+import { useAuthStore } from '../store/authStore';
 
 
 interface ItemNavegacion {
@@ -27,6 +28,15 @@ const claseEnlace = ({ isActive }: EstadoEnlace) =>
   }`;
 
 export function Layout() {
+  const navigate = useNavigate();
+  const usuario = useAuthStore((state) => state.usuario);
+  const logout = useAuthStore((state) => state.logout);
+
+  const cerrarSesion = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 md:flex-row">
       <aside className="border-b border-slate-200 bg-white md:sticky md:top-0 md:h-screen md:w-64 md:shrink-0 md:border-r md:border-b-0">
@@ -53,6 +63,24 @@ export function Layout() {
             </NavLink>
           ))}
         </nav>
+
+        <div className="flex items-center justify-between gap-3 px-5 pb-4 md:mt-6 md:items-start md:flex-col">
+          <div className="min-w-0">
+            <p className="truncate text-sm font-semibold text-slate-800">
+              {usuario?.nombre ?? 'Sesión activa'}
+            </p>
+            {usuario?.rol && (
+              <p className="text-xs text-slate-500">{usuario.rol}</p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={cerrarSesion}
+            className="shrink-0 rounded-lg border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+          >
+            Cerrar sesión
+          </button>
+        </div>
       </aside>
 
       <div className="min-w-0 flex-1">

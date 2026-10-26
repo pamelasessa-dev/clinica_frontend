@@ -1,22 +1,18 @@
 import { api } from "../lib/axios";
+import type { LoginFormData } from "../schemas/loginSchema";
 
-interface CredencialesLogin {
-  email: string;
-  password: string;
-}
-
-interface RespuestaLogin {
+export interface LoginResponse {
   token: string;
+
+  usuario: {
+    id: number;
+    nombre: string;
+    email: string;
+    rol: string;
+  };
 }
 
-export async function iniciarSesion(
-  credenciales: CredencialesLogin,
-): Promise<void> {
-  const response = await api.post<RespuestaLogin>("/auth/login", credenciales);
-
-  localStorage.setItem("token", response.data.token);
-}
-
-export function cerrarSesion(): void {
-  localStorage.removeItem("token");
+export async function login(datos: LoginFormData): Promise<LoginResponse> {
+  const { data } = await api.post<LoginResponse>("/auth/login", datos);
+  return data;
 }
