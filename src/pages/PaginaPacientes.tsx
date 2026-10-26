@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { usePacientesStore } from "../store/pacientesStore";
 import toast from "react-hot-toast";
-import type { Paciente } from "../types/paciente";
+import type { EstadoPaciente, Paciente } from "../types/paciente";
 import type { CrearPacienteDTO } from "../types/dtos";
 import { PacienteCard } from "../components/PacienteCard";
 import { BuscadorPacientes } from "../components/BuscadorPacientes";
@@ -10,6 +10,7 @@ import { ModalConfirmacion } from "../components/ModalConfirmacion";
 import { extraerMensajeError } from "../lib/errorHandler";
 import { useFiltrosStore } from "../store/filtrosStore";
 import { useDebounce } from "../hooks/useDebounce";
+import { FiltroEstado } from "../components/FiltroEstado";
 
 export function PaginaPacientes() {
   const pacientes = usePacientesStore((s) => s.pacientes);
@@ -22,6 +23,8 @@ export function PaginaPacientes() {
 
   const busqueda = useFiltrosStore((s) => s.queryPacientes);
   const setBusqueda = useFiltrosStore((s) => s.setQueryPacientes);
+  const estadoFiltro = useFiltrosStore((s) => s.estadoPacienteFiltro);
+  const setEstadoFiltro = useFiltrosStore((s) => s.setEstadoPaciente);
   const resetFiltros = useFiltrosStore((s) => s.resetFiltros);
   const busquedaDebounced = useDebounce(busqueda, 350);
 
@@ -40,11 +43,25 @@ export function PaginaPacientes() {
     void cargar(busquedaDebounced.trim());
   }, [cargar, busquedaDebounced]);
 
-  // Los pacientes ya vienen filtrados desde el backend
-  const pacientesFiltrados = pacientes;
+  const pacientesFiltrados = pacientes.filter(
+    (paciente) =>
+      estadoFiltro === "Todos" || paciente.estado === estadoFiltro,
+  );
 
   const limpiarBusqueda = () => {
     resetFiltros();
+  };
+
+  const cambiarEstadoPaciente = async (
+    id: string,
+    estado: EstadoPaciente,
+  ) => {
+    try {
+      await actualizar(id, { estado });
+      toast.success("Estado del paciente actualizado");
+    } catch (err) {
+      toast.error(extraerMensajeError(err));
+    }
   };
 
   // Crear o actualizar un paciente
@@ -55,6 +72,7 @@ export function PaginaPacientes() {
 
         await actualizar(idOriginal, {
           nombre: datos.nombre,
+          estado: datos.estado,
           apellido: datos.apellido,
           email: datos.email,
           fecha_nacimiento: datos.fecha_nacimiento,
@@ -167,13 +185,18 @@ export function PaginaPacientes() {
               cargando={cargando}
             />
 
+            <FiltroEstado
+              value={estadoFiltro}
+              onChange={setEstadoFiltro}
+            />
+
             <button
               type="button"
               onClick={limpiarBusqueda}
-              disabled={busqueda.trim() === ""}
+              disabled={busqueda.trim() === "" && estadoFiltro === "Todos"}
               className="shrink-0 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Limpiar búsqueda
+              Limpiar filtros
             </button>
           </div>
 
@@ -195,6 +218,7 @@ export function PaginaPacientes() {
               <PacienteCard
                 key={paciente.id}
                 paciente={paciente}
+                onCambiarEstado={cambiarEstadoPaciente}
                 onEditar={(id) => {
                   const seleccionado = pacientes.find((p) => p.id === id);
 
