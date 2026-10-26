@@ -1,34 +1,9 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Route, Routes } from 'react-router';
+import { BrowserRouter } from 'react-router';
+import { Toaster } from 'react-hot-toast';
 import './App.css';
-import { Layout } from './components/Layout';
-import PaginaDashboard from './pages/PaginaDashboard';
-import { PaginaPacientes } from './pages/PaginaPacientes';
-import { PaginaDetallePaciente } from './pages/PaginaDetallePaciente';
-import { PaginaNuevaCita } from './pages/PaginaNuevaCita';
-import { PaginaNotFound } from './pages/PaginaNotFound';
-import { PaginaLogin } from './pages/PaginaLogin';
-import { PaginaReportes } from './pages/PaginaReportes';
-
-function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/login" element={<PaginaLogin />} />
-
-        <Route element={<Layout />}>
-          <Route path="/" element={<PaginaDashboard />} />
-          <Route path="/pacientes" element={<PaginaPacientes />} />
-          <Route path="/pacientes/:id" element={<PaginaDetallePaciente />} />
-          <Route path="/citas/nueva" element={<PaginaNuevaCita />} />
-          <Route path="/reportes" element={<PaginaReportes />} />
-          <Route path="*" element={<PaginaNotFound />} />
-        </Route>
-      </Routes>
-    </BrowserRouter>
-  );
-}
+import App from './App';
 
 const root = document.getElementById('root');
 
@@ -38,6 +13,9 @@ if (!root) {
 
 createRoot(root).render(
   <StrictMode>
-    <App />
+    <BrowserRouter>
+      <App />
+      <Toaster position="top-right" />
+    </BrowserRouter>
   </StrictMode>,
 );
