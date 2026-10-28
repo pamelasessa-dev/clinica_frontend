@@ -66,9 +66,9 @@ export function Layout() {
 
         <div className="flex items-center justify-between gap-3 px-5 pb-4 md:mt-6 md:items-start md:flex-col">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-slate-800">
+            <NavLink to="/perfil" className="truncate text-sm font-semibold text-slate-800 hover:text-teal-700">
               {usuario?.nombre ?? 'Sesión activa'}
-            </p>
+            </NavLink>
             {usuario?.rol && (
               <p className="text-xs text-slate-500">{usuario.rol}</p>
             )}
