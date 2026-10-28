@@ -7,17 +7,21 @@ import { PaginaNuevaCita } from './pages/PaginaNuevaCita';
 import { PaginaNotFound } from './pages/PaginaNotFound';
 import { PaginaLogin } from './pages/PaginaLogin';
 import { PaginaReportes } from './pages/PaginaReportes';
+import { PaginaSinAcceso } from './pages/PaginaSinAcceso';
 import { useAuthStore } from './store/authStore';
 
-function RutaProtegida() {
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const token = useAuthStore((state) => state.token);
+interface RutaProtegidaProps {
+  rolesPermitidos?: string[];
+}
 
-  return isAuthenticated && token ? (
-    <Outlet />
-  ) : (
-    <Navigate to="/login" replace />
-  );
+function RutaProtegida({ rolesPermitidos }: RutaProtegidaProps) {
+  const { isAuthenticated, token, usuario } = useAuthStore();
+
+  if (!isAuthenticated || !token) return <Navigate to="/login" replace />;
+  if (rolesPermitidos && !rolesPermitidos.includes(usuario?.rol ?? '')) {
+    return <Navigate to="/sin-acceso" replace />;
+  }
+  return <Outlet />;
 }
 
 function App() {
@@ -26,12 +30,15 @@ function App() {
       <Route path="/login" element={<PaginaLogin />} />
 
       <Route element={<RutaProtegida />}>
+        <Route path="/sin-acceso" element={<PaginaSinAcceso />} />
         <Route element={<Layout />}>
           <Route path="/" element={<PaginaDashboard />} />
           <Route path="/pacientes" element={<PaginaPacientes />} />
           <Route path="/pacientes/:id" element={<PaginaDetallePaciente />} />
           <Route path="/citas/nueva" element={<PaginaNuevaCita />} />
-          <Route path="/reportes" element={<PaginaReportes />} />
+          <Route element={<RutaProtegida rolesPermitidos={['GERENCIA', 'ADMIN']} />}>
+            <Route path="/reportes" element={<PaginaReportes />} />
+          </Route>
           <Route path="*" element={<PaginaNotFound />} />
         </Route>
       </Route>
