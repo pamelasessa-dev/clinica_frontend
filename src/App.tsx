@@ -8,6 +8,7 @@ import { PaginaNotFound } from './pages/PaginaNotFound';
 import { PaginaLogin } from './pages/PaginaLogin';
 import { PaginaReportes } from './pages/PaginaReportes';
 import { PaginaSinAcceso } from './pages/PaginaSinAcceso';
+import { PaginaPerfil } from './pages/PaginaPerfil';
 import { useAuthStore } from './store/authStore';
 
 interface RutaProtegidaProps {
@@ -33,6 +34,7 @@ function App() {
         <Route path="/sin-acceso" element={<PaginaSinAcceso />} />
         <Route element={<Layout />}>
           <Route path="/" element={<PaginaDashboard />} />
+          <Route path="/perfil" element={<PaginaPerfil />} />
           <Route path="/pacientes" element={<PaginaPacientes />} />
           <Route path="/pacientes/:id" element={<PaginaDetallePaciente />} />
           <Route path="/citas/nueva" element={<PaginaNuevaCita />} />
