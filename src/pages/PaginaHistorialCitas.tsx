@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router";
 import { SkeletonCitaRow } from "../components/SkeletonCitaRow";
+import { AlertaBanner, EstadoVacio } from "../shared/components/ui";
 import { extraerMensajeError } from "../lib/errorHandler";
 import { obtenerCitasPagina } from "../services/citas";
 import type { RespuestaPaginada } from "../types/api";
@@ -78,16 +79,9 @@ export function PaginaHistorialCitas() {
       <section aria-label="Lista de citas" aria-busy={cargando} className="space-y-3">
         {cargando && Array.from({ length: 10 }, (_, index) => <SkeletonCitaRow key={index} />)}
 
-        {!cargando && error && (
-          <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-5 text-red-800">{error}</div>
-        )}
+        {!cargando && error && <AlertaBanner tipo="error" mensaje={error} />}
 
-        {!cargando && !error && respuesta?.data.length === 0 && (
-          <div className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-            <h2 className="font-semibold text-slate-900">No hay citas para mostrar</h2>
-            <p className="mt-1 text-sm text-slate-600">Prueba con otro estado o vuelve más tarde.</p>
-          </div>
-        )}
+        {!cargando && !error && respuesta?.data.length === 0 && <EstadoVacio titulo="No hay citas para mostrar" descripcion="Prueba con otro estado o vuelve más tarde." />}
 
         {!cargando && !error && respuesta?.data.map((cita) => (
           <article key={cita.id_cita} className="flex min-h-[76px] flex-wrap items-center gap-4 rounded-xl border border-slate-200 bg-white px-5 py-4 shadow-sm">

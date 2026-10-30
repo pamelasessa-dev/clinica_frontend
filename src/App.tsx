@@ -11,6 +11,7 @@ import { PaginaSinAcceso } from './pages/PaginaSinAcceso';
 import { PaginaPerfil } from './pages/PaginaPerfil';
 import { PaginaHistorialCitas } from './pages/PaginaHistorialCitas';
 import { useAuthStore } from './store/authStore';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 interface RutaProtegidaProps {
   rolesPermitidos?: string[];
@@ -41,7 +42,7 @@ function App() {
           <Route path="/citas/nueva" element={<PaginaNuevaCita />} />
           <Route path="/historial" element={<PaginaHistorialCitas />} />
           <Route element={<RutaProtegida rolesPermitidos={['GERENCIA', 'ADMIN']} />}>
-            <Route path="/reportes" element={<PaginaReportes />} />
+          <Route path="/reportes" element={<ErrorBoundary mensaje="Error al cargar reportes"><PaginaReportes /></ErrorBoundary>} />
           </Route>
           <Route path="*" element={<PaginaNotFound />} />
         </Route>
