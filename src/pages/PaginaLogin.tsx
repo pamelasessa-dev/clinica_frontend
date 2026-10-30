@@ -6,6 +6,7 @@ import { extraerMensajeError } from "../lib/errorHandler";
 import { login } from "../services/auth";
 import { loginSchema, type LoginFormData } from "../schemas/loginSchema";
 import { useAuthStore } from "../store/authStore";
+import { Spinner } from "../shared/components/ui";
 
 const claseInput =
   "w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100";
@@ -34,6 +35,8 @@ export function PaginaLogin() {
   };
 
   return (
+    <>
+    {isSubmitting && <Spinner fullscreen label="Iniciando sesión" />}
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4 py-10">
       <section className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-xl sm:p-9">
         <div className="mb-8 text-center">
@@ -102,7 +105,7 @@ export function PaginaLogin() {
             disabled={isSubmitting}
             className="w-full rounded-lg bg-teal-700 px-4 py-3 font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {isSubmitting ? "Ingresando..." : "Iniciar sesión"}
+            {isSubmitting ? <span className="inline-flex items-center gap-2"><Spinner />Ingresando...</span> : "Iniciar sesión"}
           </button>
         </form>
 
@@ -111,5 +114,6 @@ export function PaginaLogin() {
         </p>
       </section>
     </main>
+    </>
   );
 }

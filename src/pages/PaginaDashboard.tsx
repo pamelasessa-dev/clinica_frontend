@@ -5,6 +5,8 @@ import StatusBadge from "../components/StatusBadge";
 import type { Metrica } from "../types";
 import { obtenerMetricasDashboard } from "../services/dashboard";
 import { extraerMensajeError } from "../lib/errorHandler";
+import { AlertaBanner } from "../shared/components/ui";
+import { SkeletonMetricCard } from "../components/SkeletonMetricCard";
 
 export default function PaginaDashboard() {
   const [mantenimiento, setMantenimiento] = useState(false);
@@ -122,30 +124,12 @@ export default function PaginaDashboard() {
           </div>
 
           {cargando && (
-            <p
-              role="status"
-              className="rounded-xl bg-white p-6 text-slate-600 shadow-sm"
-            >
-              Cargando métricas...
-            </p>
-          )}
-
-          {!cargando && error && (
-            <div
-              role="alert"
-              className="rounded-xl border border-rose-200 bg-white p-6"
-            >
-              <p className="text-rose-700">{error}</p>
-
-              <button
-                type="button"
-                onClick={() => void cargarMetricas()}
-                className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-              >
-                Reintentar
-              </button>
+            <div role="status" aria-label="Cargando métricas" className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+              {Array.from({ length: 4 }, (_, index) => <SkeletonMetricCard key={index} />)}
             </div>
           )}
+
+          {!cargando && error && <AlertaBanner tipo="error" titulo="No se pudieron cargar las métricas" mensaje={error} accion={{ label: "Reintentar", onClick: () => void cargarMetricas() }} />}
 
           {!cargando && !error && (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">

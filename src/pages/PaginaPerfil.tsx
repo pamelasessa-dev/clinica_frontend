@@ -7,6 +7,7 @@ import { extraerMensajeError } from "../lib/errorHandler";
 import { perfilSchema, type PerfilFormData } from "../schemas/perfilSchema";
 import { actualizarPerfil } from "../services/auth";
 import { useAuthStore } from "../store/authStore";
+import { Spinner } from "../shared/components/ui";
 
 const claseInput = "w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100";
 
@@ -71,7 +72,7 @@ export function PaginaPerfil() {
 
         <div className="flex justify-end border-t border-slate-100 pt-5">
           <button type="submit" disabled={isSubmitting} className="rounded-lg bg-teal-700 px-5 py-3 font-semibold text-white transition hover:bg-teal-800 focus:outline-none focus:ring-2 focus:ring-teal-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60">
-            {isSubmitting ? "Guardando..." : "Guardar cambios"}
+            {isSubmitting ? <span className="inline-flex items-center gap-2"><Spinner />Guardando...</span> : "Guardar cambios"}
           </button>
         </div>
       </form>

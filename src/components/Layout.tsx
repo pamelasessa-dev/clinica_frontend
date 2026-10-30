@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useAuthStore } from '../store/authStore';
+import { ModalConfirmacion } from '../shared/components/ui';
 
 interface ItemNavegacion {
   to: string;
@@ -33,6 +34,7 @@ export function Layout() {
   const usuario = useAuthStore((state) => state.usuario);
   const logout = useAuthStore((state) => state.logout);
   const [menuAbierto, setMenuAbierto] = useState(false);
+  const [confirmarCierreSesion, setConfirmarCierreSesion] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const puedeVerReportes = ['GERENCIA', 'ADMIN'].includes(usuario?.rol ?? '');
 
@@ -135,7 +137,7 @@ export function Layout() {
                   </NavLink>
                 )}
                 <div className="mt-2 border-t border-slate-100 px-2 pt-2">
-                  <button type="button" role="menuitem" onClick={cerrarSesion} className="w-full rounded-lg px-2 py-2 text-left text-sm font-medium text-red-700 hover:bg-red-50">
+                  <button type="button" role="menuitem" onClick={() => { setMenuAbierto(false); setConfirmarCierreSesion(true); }} className="w-full rounded-lg px-2 py-2 text-left text-sm font-medium text-red-700 hover:bg-red-50">
                     Cerrar sesión
                   </button>
                 </div>
@@ -145,6 +147,14 @@ export function Layout() {
         </header>
         <Outlet />
       </div>
+      <ModalConfirmacion
+        abierto={confirmarCierreSesion}
+        titulo="Cerrar sesión"
+        mensaje="¿Quieres cerrar tu sesión en la clínica?"
+        etiquetaConfirmar="Cerrar sesión"
+        onCancelar={() => setConfirmarCierreSesion(false)}
+        onConfirmar={cerrarSesion}
+      />
     </div>
   );
 }

@@ -6,7 +6,8 @@ import type { CrearPacienteDTO } from "../types/dtos";
 import { PacienteCard } from "../components/PacienteCard";
 import { BuscadorPacientes } from "../components/BuscadorPacientes";
 import { FormularioPaciente } from "../components/FormularioPaciente";
-import { ModalConfirmacion } from "../components/ModalConfirmacion";
+import { AlertaBanner, EstadoVacio, ModalConfirmacion } from "../shared/components/ui";
+import { SkeletonPacienteRow } from "../components/SkeletonPacienteRow";
 import { extraerMensajeError } from "../lib/errorHandler";
 import { useFiltrosStore } from "../store/filtrosStore";
 import { useDebounce } from "../hooks/useDebounce";
@@ -136,29 +137,11 @@ export function PaginaPacientes() {
         </header>
 
         {/* Error de carga */}
-        {error && (
-          <section
-            role="alert"
-            className="mb-6 rounded-xl border border-rose-200 bg-white p-6"
-          >
-            <h2 className="text-lg font-semibold text-slate-900">
-              No se pudieron cargar los pacientes
-            </h2>
-
-            <p className="mt-2 text-sm text-rose-700">{error}</p>
-
-            <button
-              type="button"
-              onClick={() => void cargar(busquedaDebounced.trim())}
-              className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-            >
-              Reintentar
-            </button>
-          </section>
-        )}
+        {error && <div className="mb-6"><AlertaBanner tipo="error" titulo="No se pudieron cargar los pacientes" mensaje={error} accion={{ label: "Reintentar", onClick: () => void cargar(busquedaDebounced.trim()) }} /></div>}
 
         {/* Formulario de creación y edición */}
         <section
+          id="formulario-paciente"
           aria-label={pacienteEditando ? "Editar paciente" : "Agregar paciente"}
           className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6"
         >
@@ -209,7 +192,11 @@ export function PaginaPacientes() {
         </section>
 
         {/* Lista de pacientes */}
-        {pacientesFiltrados.length > 0 ? (
+        {cargando ? (
+          <section aria-label="Cargando pacientes" className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {Array.from({ length: 6 }, (_, index) => <SkeletonPacienteRow key={index} />)}
+          </section>
+        ) : pacientesFiltrados.length > 0 ? (
           <section
             aria-label="Lista de pacientes"
             className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
@@ -231,29 +218,14 @@ export function PaginaPacientes() {
             ))}
           </section>
         ) : (
-          !cargando &&
           !error && (
-            <section className="rounded-xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
-              <h2 className="text-lg font-semibold text-slate-900">
-                No se encontraron pacientes
-              </h2>
-
-              <p className="mt-2 text-sm text-slate-500">
-                {busqueda.trim() === ""
-                  ? "La API no devolvió pacientes."
-                  : "Prueba con otro nombre, apellido o email."}
-              </p>
-
-              {busqueda.trim() !== "" && (
-                <button
-                  type="button"
-                  onClick={limpiarBusqueda}
-                  className="mt-4 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
-                >
-                  Limpiar búsqueda
-                </button>
-              )}
-            </section>
+            <EstadoVacio
+              titulo={busqueda.trim() === "" && estadoFiltro === "Todos" ? "No hay pacientes registrados" : "No se encontraron pacientes"}
+              descripcion={busqueda.trim() === "" ? "Registra un paciente para comenzar." : "Prueba con otro nombre, apellido o email."}
+              accion={busqueda.trim() === "" && estadoFiltro === "Todos"
+                ? { label: "Agregar paciente", onClick: () => document.getElementById("formulario-paciente")?.scrollIntoView({ behavior: "smooth" }) }
+                : { label: "Limpiar filtros", onClick: limpiarBusqueda }}
+            />
           )
         )}
       </div>
@@ -268,6 +240,8 @@ export function PaginaPacientes() {
             : ""
         }
         cargando={eliminando}
+        etiquetaConfirmar="Sí, eliminar"
+        mensajeCargando="Eliminando..."
         onCancelar={() => {
           if (!eliminando) {
             setPacienteAEliminar(null);
