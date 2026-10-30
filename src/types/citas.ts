@@ -18,8 +18,5 @@ export interface Cita {
   };
 }
 
-// Estructura que devuelve GET /citas/ (el backend no pagina esta lista).
-export interface RespuestaCitas {
-  data: Cita[];
-}
+export type EstadoFiltroCita = "Todos" | EstadoCita;
 

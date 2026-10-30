@@ -1,4 +1,5 @@
 import { api } from "../lib/axios";
+import type { RespuestaPaginada } from "../types/api";
 
 interface PacienteApi {
   CI: number;
@@ -11,10 +12,6 @@ interface MedicoApi {
 interface CitaApi {
   id_cita: number;
   estado: "PROGRAMADA" | "COMPLETADA" | "CANCELADA";
-}
-
-interface RespuestaCitasApi {
-  data: CitaApi[];
 }
 
 export interface MetricasDashboard {
@@ -33,18 +30,18 @@ export async function obtenerMetricasDashboard(): Promise<MetricasDashboard> {
   ] = await Promise.all([
     api.get<PacienteApi[]>("/pacientes/"),
     api.get<MedicoApi[]>("/medicos/"),
-    api.get<RespuestaCitasApi>("/citas/", {
-      params: { estado: "PROGRAMADA" },
+    api.get<RespuestaPaginada<CitaApi>>("/citas/", {
+      params: { estado: "PROGRAMADA", limite: 1 },
     }),
-    api.get<RespuestaCitasApi>("/citas/", {
-      params: { estado: "COMPLETADA" },
+    api.get<RespuestaPaginada<CitaApi>>("/citas/", {
+      params: { estado: "COMPLETADA", limite: 1 },
     }),
   ]);
 
   return {
     pacientes: respuestaPacientes.data.length,
     medicos: respuestaMedicos.data.length,
-    citasProgramadas: respuestaProgramadas.data.data.length,
-    citasCompletadas: respuestaCompletadas.data.data.length,
+    citasProgramadas: respuestaProgramadas.data.total,
+    citasCompletadas: respuestaCompletadas.data.total,
   };
 }
