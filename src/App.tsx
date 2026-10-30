@@ -9,6 +9,7 @@ import { PaginaLogin } from './pages/PaginaLogin';
 import { PaginaReportes } from './pages/PaginaReportes';
 import { PaginaSinAcceso } from './pages/PaginaSinAcceso';
 import { PaginaPerfil } from './pages/PaginaPerfil';
+import { PaginaHistorialCitas } from './pages/PaginaHistorialCitas';
 import { useAuthStore } from './store/authStore';
 
 interface RutaProtegidaProps {
@@ -38,6 +39,7 @@ function App() {
           <Route path="/pacientes" element={<PaginaPacientes />} />
           <Route path="/pacientes/:id" element={<PaginaDetallePaciente />} />
           <Route path="/citas/nueva" element={<PaginaNuevaCita />} />
+          <Route path="/historial" element={<PaginaHistorialCitas />} />
           <Route element={<RutaProtegida rolesPermitidos={['GERENCIA', 'ADMIN']} />}>
             <Route path="/reportes" element={<PaginaReportes />} />
           </Route>

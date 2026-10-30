@@ -33,9 +33,16 @@ function aTexto(valor: unknown): string | null {
 // El backend responde { message } en la mayoría de los casos y { error }
 // en el controlador de citas. Se comprueba el tipo antes de leer cada campo.
 function mensajeDelBackend(data: unknown): string | null {
+  if (typeof data === "string") return aTexto(data);
+  if (Array.isArray(data)) return aTexto(data);
   if (!esRegistro(data)) return null;
 
-  return aTexto(data.message) ?? aTexto(data.error);
+  return (
+    aTexto(data.message) ??
+    aTexto(data.error) ??
+    aTexto(data.detail) ??
+    aTexto(data.errors)
+  );
 }
 
 export function extraerMensajeError(err: unknown): string {
@@ -50,7 +57,11 @@ export function extraerMensajeError(err: unknown): string {
 
     if (!err.response) return MENSAJE_SIN_CONEXION;
 
-    return MENSAJE_POR_DEFECTO;
+    if (err.response.status === 404) {
+      return "No se encontró el recurso solicitado. Verifica que el endpoint de perfil esté disponible en el servidor.";
+    }
+
+    return `El servidor respondió con un error (HTTP ${err.response.status}).`;
   }
 
   if (err instanceof Error && err.message.trim() !== "") {

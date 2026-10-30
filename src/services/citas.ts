@@ -2,38 +2,33 @@ import { api } from "../lib/axios";
 import type {
   Cita,
   EstadoCita,
-  RespuestaCitas,
+  EstadoFiltroCita,
 } from "../types/citas";
 import type { CrearCitaDTO } from "../types/dtos";
+import type { RespuestaPaginada } from "../types/api";
 
-export async function obtenerCitas(estado?: EstadoCita): Promise<Cita[]> {
-  const response = await api.get<RespuestaCitas>("/citas/", {
-    params: estado ? { estado } : {},
+export async function obtenerCitasPagina(
+  pagina: number,
+  estado: EstadoFiltroCita,
+  signal?: AbortSignal,
+): Promise<RespuestaPaginada<Cita>> {
+  const response = await api.get<RespuestaPaginada<Cita>>("/citas/", {
+    params: { pagina, limite: 10, ...(estado !== "Todos" && { estado }) },
+    signal,
   });
 
-  return response.data.data;
+  return response.data;
 }
 
 export async function obtenerCitasPorPaciente(CI: number): Promise<Cita[]> {
-  const citas = await obtenerCitas();
-
-  return citas.filter((cita) => cita.paciente.CI === CI);
+  const response = await api.get<Cita[]>(`/citas/paciente/${CI}`);
+  return response.data;
 }
 
 export async function crearCita(datos: CrearCitaDTO): Promise<Cita> {
   const response = await api.post<Cita>("/citas/", datos);
-
-  const citas = await obtenerCitas();
-
-  const creada = citas.find((cita) => cita.id_cita === response.data.id_cita);
-
-  if (!creada) {
-    throw new Error(
-      "La cita se creó, pero no se pudo recuperar su información",
-    );
-  }
-
-  return creada;
+  const creada = await api.get<Cita>(`/citas/${response.data.id_cita}`);
+  return creada.data;
 }
 
 export async function actualizarEstadoCita(

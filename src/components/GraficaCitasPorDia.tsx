@@ -9,7 +9,8 @@ import {
   YAxis,
 } from "recharts";
 import { useApi } from "../hooks/useApi";
-import type { RespuestaCitas } from "../types/citas";
+import type { RespuestaPaginada } from "../types/api";
+import type { Cita } from "../types/citas";
 import {
   agruparCitasPorDia,
   obtenerRangoUltimosDias,
@@ -25,11 +26,11 @@ export function GraficaCitasPorDia() {
   const url = useMemo(
     () =>
       `/citas/?desde=${encodeURIComponent(rango.desde.toISOString())}` +
-      `&hasta=${encodeURIComponent(rango.hasta.toISOString())}`,
+      `&hasta=${encodeURIComponent(rango.hasta.toISOString())}&limite=100`,
     [rango],
   );
 
-  const { data, cargando, error, recargar } = useApi<RespuestaCitas>(url);
+  const { data, cargando, error, recargar } = useApi<RespuestaPaginada<Cita>>(url);
 
   const datos = useMemo(
     () => agruparCitasPorDia(data?.data ?? [], rango),

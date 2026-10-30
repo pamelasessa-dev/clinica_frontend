@@ -27,7 +27,7 @@ export function PaginaPerfil() {
     const formData = new FormData();
     formData.append("nombre", datos.nombre);
     formData.append("email", datos.email);
-    if (datos.telefono) formData.append("telefono", datos.telefono);
+    formData.append("telefono", datos.telefono ?? "");
     if (archivoFoto) formData.append("foto", archivoFoto);
 
     try {
