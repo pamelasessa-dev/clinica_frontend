@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -7,8 +7,8 @@ import { citaSchema, URGENCIAS } from "../schemas/citaSchema";
 import type { CitaFormData, UrgenciaCita } from "../schemas/citaSchema";
 
 import { useMedicos } from "../hooks/useMedicos";
-import { usePacientesStore } from "../store/pacientesStore";
-import { useCitasStore } from "../store/citasStore";
+import { usePacientes } from "../features/pacientes/hooks/usePacientes";
+import { useCitas } from "../features/citas/hooks/useCitas";
 import { obtenerFechaHoy } from "../utils/fecha";
 import { extraerMensajeError } from "../lib/errorHandler";
 
@@ -75,12 +75,12 @@ interface FormularioCitaProps {
 }
 
 export function FormularioCita({ onCancelar }: FormularioCitaProps) {
-  const pacientes = usePacientesStore((state) => state.pacientes);
-  const cargandoPacientes = usePacientesStore((state) => state.cargando);
-  const errorPacientes = usePacientesStore((state) => state.error);
-  const cargarPacientes = usePacientesStore((state) => state.cargar);
-
-  const agregarCita = useCitasStore((state) => state.agregarCita);
+  const {
+    pacientes,
+    cargando: cargandoPacientes,
+    error: errorPacientes,
+  } = usePacientes();
+  const { agregarCita } = useCitas();
 
   const {
     medicos,
@@ -92,12 +92,6 @@ export function FormularioCita({ onCancelar }: FormularioCitaProps) {
     null,
   );
   const [errorEnvio, setErrorEnvio] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (pacientes.length === 0) {
-      void cargarPacientes();
-    }
-  }, [pacientes.length, cargarPacientes]);
 
   const {
     register,
