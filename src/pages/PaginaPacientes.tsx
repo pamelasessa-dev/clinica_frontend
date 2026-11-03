@@ -1,33 +1,36 @@
-import { useEffect, useState } from "react";
-import { usePacientesStore } from "../store/pacientesStore";
+import { useState } from "react";
 import toast from "react-hot-toast";
 import type { EstadoPaciente, Paciente } from "../types/paciente";
 import type { CrearPacienteDTO } from "../types/dtos";
 import { PacienteCard } from "../components/PacienteCard";
 import { BuscadorPacientes } from "../components/BuscadorPacientes";
 import { FormularioPaciente } from "../components/FormularioPaciente";
-import { AlertaBanner, EstadoVacio, ModalConfirmacion } from "../shared/components/ui";
+import {
+  AlertaBanner,
+  EstadoVacio,
+  ModalConfirmacion,
+} from "../shared/components/ui";
 import { SkeletonPacienteRow } from "../components/SkeletonPacienteRow";
 import { extraerMensajeError } from "../lib/errorHandler";
-import { useFiltrosStore } from "../store/filtrosStore";
-import { useDebounce } from "../hooks/useDebounce";
 import { FiltroEstado } from "../components/FiltroEstado";
+import { usePacientesFiltrados } from "../hooks/usePacientesFiltrados";
 
 export function PaginaPacientes() {
-  const pacientes = usePacientesStore((s) => s.pacientes);
-  const cargando = usePacientesStore((s) => s.cargando);
-  const error = usePacientesStore((s) => s.error);
-  const cargar = usePacientesStore((s) => s.cargar);
-  const crear = usePacientesStore((s) => s.crear);
-  const actualizar = usePacientesStore((s) => s.actualizar);
-  const eliminar = usePacientesStore((s) => s.eliminar);
-
-  const busqueda = useFiltrosStore((s) => s.queryPacientes);
-  const setBusqueda = useFiltrosStore((s) => s.setQueryPacientes);
-  const estadoFiltro = useFiltrosStore((s) => s.estadoPacienteFiltro);
-  const setEstadoFiltro = useFiltrosStore((s) => s.setEstadoPaciente);
-  const resetFiltros = useFiltrosStore((s) => s.resetFiltros);
-  const busquedaDebounced = useDebounce(busqueda, 350);
+  const {
+    pacientes,
+    filtrados: pacientesFiltrados,
+    query: busqueda,
+    setQuery: setBusqueda,
+    estadoFiltro,
+    setEstadoFiltro,
+    limpiarFiltros,
+    cargando,
+    error,
+    recargar,
+    crear,
+    actualizar,
+    eliminar,
+  } = usePacientesFiltrados();
 
   const [pacienteEditando, setPacienteEditando] = useState<Paciente | null>(
     null,
@@ -39,24 +42,11 @@ export function PaginaPacientes() {
 
   const [eliminando, setEliminando] = useState(false);
 
-  // Cargar pacientes y buscar cuando termina el debounce
-  useEffect(() => {
-    void cargar(busquedaDebounced.trim());
-  }, [cargar, busquedaDebounced]);
-
-  const pacientesFiltrados = pacientes.filter(
-    (paciente) =>
-      estadoFiltro === "Todos" || paciente.estado === estadoFiltro,
-  );
-
   const limpiarBusqueda = () => {
-    resetFiltros();
+    limpiarFiltros();
   };
 
-  const cambiarEstadoPaciente = async (
-    id: string,
-    estado: EstadoPaciente,
-  ) => {
+  const cambiarEstadoPaciente = async (id: string, estado: EstadoPaciente) => {
     try {
       await actualizar(id, { estado });
       toast.success("Estado del paciente actualizado");
@@ -123,21 +113,34 @@ export function PaginaPacientes() {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl">
-        {/* Encabezado */}
         <header className="mb-8">
-          <p className="text-sm font-medium text-blue-600">Gestión clínica</p>
+          <p className="text-sm font-medium text-blue-600">
+            Gestión de clínica
+          </p>
 
           <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">
             Pacientes
           </h1>
 
           <p className="mt-2 text-slate-600">
-            Consulta y administra la información de tus pacientes.
+            Consulta y administración de la información de tus pacientes.
           </p>
         </header>
 
         {/* Error de carga */}
-        {error && <div className="mb-6"><AlertaBanner tipo="error" titulo="No se pudieron cargar los pacientes" mensaje={error} accion={{ label: "Reintentar", onClick: () => void cargar(busquedaDebounced.trim()) }} /></div>}
+        {error && (
+          <div className="mb-6">
+            <AlertaBanner
+              tipo="error"
+              titulo="No se pudieron cargar los pacientes"
+              mensaje={error}
+              accion={{
+                label: "Reintentar",
+                onClick: recargar,
+              }}
+            />
+          </div>
+        )}
 
         {/* Formulario de creación y edición */}
         <section
@@ -168,10 +171,7 @@ export function PaginaPacientes() {
               cargando={cargando}
             />
 
-            <FiltroEstado
-              value={estadoFiltro}
-              onChange={setEstadoFiltro}
-            />
+            <FiltroEstado value={estadoFiltro} onChange={setEstadoFiltro} />
 
             <button
               type="button"
@@ -193,8 +193,13 @@ export function PaginaPacientes() {
 
         {/* Lista de pacientes */}
         {cargando ? (
-          <section aria-label="Cargando pacientes" className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-            {Array.from({ length: 6 }, (_, index) => <SkeletonPacienteRow key={index} />)}
+          <section
+            aria-label="Cargando pacientes"
+            className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
+          >
+            {Array.from({ length: 6 }, (_, index) => (
+              <SkeletonPacienteRow key={index} />
+            ))}
           </section>
         ) : pacientesFiltrados.length > 0 ? (
           <section
@@ -220,11 +225,27 @@ export function PaginaPacientes() {
         ) : (
           !error && (
             <EstadoVacio
-              titulo={busqueda.trim() === "" && estadoFiltro === "Todos" ? "No hay pacientes registrados" : "No se encontraron pacientes"}
-              descripcion={busqueda.trim() === "" ? "Registra un paciente para comenzar." : "Prueba con otro nombre, apellido o email."}
-              accion={busqueda.trim() === "" && estadoFiltro === "Todos"
-                ? { label: "Agregar paciente", onClick: () => document.getElementById("formulario-paciente")?.scrollIntoView({ behavior: "smooth" }) }
-                : { label: "Limpiar filtros", onClick: limpiarBusqueda }}
+              titulo={
+                busqueda.trim() === "" && estadoFiltro === "Todos"
+                  ? "No hay pacientes registrados"
+                  : "No se encontraron pacientes"
+              }
+              descripcion={
+                busqueda.trim() === ""
+                  ? "Registra un paciente para comenzar."
+                  : "Prueba con otro nombre, apellido o email."
+              }
+              accion={
+                busqueda.trim() === "" && estadoFiltro === "Todos"
+                  ? {
+                      label: "Agregar paciente",
+                      onClick: () =>
+                        document
+                          .getElementById("formulario-paciente")
+                          ?.scrollIntoView({ behavior: "smooth" }),
+                    }
+                  : { label: "Limpiar filtros", onClick: limpiarBusqueda }
+              }
             />
           )
         )}
