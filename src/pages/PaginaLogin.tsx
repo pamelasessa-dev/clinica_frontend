@@ -6,7 +6,7 @@ import { extraerMensajeError } from "../lib/errorHandler";
 import { login } from "../services/auth";
 import { loginSchema, type LoginFormData } from "../schemas/loginSchema";
 import { useAuthStore } from "../store/authStore";
-import { Spinner } from "../shared/components/ui";
+import { Spinner } from "../components/ui";
 
 const claseInput =
   "w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100";

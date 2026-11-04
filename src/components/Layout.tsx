@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useAuthStore } from '../store/authStore';
-import { ModalConfirmacion } from '../shared/components/ui';
+import { ModalConfirmacion } from './ui';
 
 interface ItemNavegacion {
   to: string;

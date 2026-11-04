@@ -1,17 +1,20 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Outlet, Route, Routes } from 'react-router';
 import { Layout } from './components/Layout';
 import PaginaDashboard from './pages/PaginaDashboard';
-import { PaginaPacientes } from './pages/PaginaPacientes';
-import { PaginaDetallePaciente } from './pages/PaginaDetallePaciente';
-import { PaginaNuevaCita } from './pages/PaginaNuevaCita';
-import { PaginaNotFound } from './pages/PaginaNotFound';
 import { PaginaLogin } from './pages/PaginaLogin';
-import { PaginaReportes } from './pages/PaginaReportes';
-import { PaginaSinAcceso } from './pages/PaginaSinAcceso';
-import { PaginaPerfil } from './pages/PaginaPerfil';
-import { PaginaHistorialCitas } from './pages/PaginaHistorialCitas';
 import { useAuthStore } from './store/authStore';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { Spinner } from './components/ui/Spinner';
+
+const PaginaPacientes = lazy(() => import('./pages/PaginaPacientes').then((m) => ({ default: m.PaginaPacientes })));
+const PaginaDetallePaciente = lazy(() => import('./pages/PaginaDetallePaciente').then((m) => ({ default: m.PaginaDetallePaciente })));
+const PaginaNuevaCita = lazy(() => import('./pages/PaginaNuevaCita').then((m) => ({ default: m.PaginaNuevaCita })));
+const PaginaNotFound = lazy(() => import('./pages/PaginaNotFound').then((m) => ({ default: m.PaginaNotFound })));
+const PaginaReportes = lazy(() => import('./pages/PaginaReportes').then((m) => ({ default: m.PaginaReportes })));
+const PaginaSinAcceso = lazy(() => import('./pages/PaginaSinAcceso').then((m) => ({ default: m.PaginaSinAcceso })));
+const PaginaPerfil = lazy(() => import('./pages/PaginaPerfil').then((m) => ({ default: m.PaginaPerfil })));
+const PaginaHistorialCitas = lazy(() => import('./pages/PaginaHistorialCitas').then((m) => ({ default: m.PaginaHistorialCitas })));
 
 interface RutaProtegidaProps {
   rolesPermitidos?: string[];
@@ -29,8 +32,9 @@ function RutaProtegida({ rolesPermitidos }: RutaProtegidaProps) {
 
 function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<PaginaLogin />} />
+    <Suspense fallback={<Spinner fullscreen label="Cargando página" />}>
+      <Routes>
+        <Route path="/login" element={<PaginaLogin />} />
 
       <Route element={<RutaProtegida />}>
         <Route path="/sin-acceso" element={<PaginaSinAcceso />} />
@@ -47,7 +51,8 @@ function App() {
           <Route path="*" element={<PaginaNotFound />} />
         </Route>
       </Route>
-    </Routes>
+      </Routes>
+    </Suspense>
   );
 }
 

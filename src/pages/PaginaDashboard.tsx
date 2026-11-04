@@ -1,70 +1,32 @@
 import { Link } from "react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useMemo, useState } from "react";
 import MetricCard from "../components/MetricCard";
 import StatusBadge from "../components/StatusBadge";
-import type { Metrica } from "../types";
-import { obtenerMetricasDashboard } from "../services/dashboard";
-import { extraerMensajeError } from "../lib/errorHandler";
-import { AlertaBanner } from "../shared/components/ui";
+import { AlertaBanner } from "../components/ui";
 import { SkeletonMetricCard } from "../components/SkeletonMetricCard";
+import { useMetricasDashboard } from "../hooks/useMetricasDashboard";
 
 export default function PaginaDashboard() {
   const [mantenimiento, setMantenimiento] = useState(false);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState("");
-  const [metricas, setMetricas] = useState<Metrica[]>([]);
+  const { datos, cargando, error, recargar } = useMetricasDashboard();
 
-  const cargarMetricas = useCallback(async () => {
-    setCargando(true);
-    setError("");
+  const metricas = useMemo(() => {
+    if (!datos) return [];
 
-    try {
-      const datos = await obtenerMetricasDashboard();
+    const totalCitasContabilizadas = datos.citasProgramadas + datos.citasCompletadas;
+    const porcentajeCompletadas = totalCitasContabilizadas === 0
+      ? 0
+      : Math.round((datos.citasCompletadas / totalCitasContabilizadas) * 100);
 
-      setMetricas([
-        {
-          id: "pacientes",
-          titulo: "Pacientes",
-          valor: datos.pacientes,
-          descripcion: "Pacientes registrados",
-          tendencia: "positiva",
-          icono: "👥",
-        },
-        {
-          id: "medicos",
-          titulo: "Médicos",
-          valor: datos.medicos,
-          descripcion: "Médicos registrados",
-          tendencia: "positiva",
-          icono: "🩺",
-        },
-        {
-          id: "programadas",
-          titulo: "Citas programadas",
-          valor: datos.citasProgramadas,
-          descripcion: "Citas pendientes de atención",
-          tendencia: "neutra",
-          icono: "📅",
-        },
-        {
-          id: "completadas",
-          titulo: "Citas completadas",
-          valor: datos.citasCompletadas,
-          descripcion: "Citas finalizadas",
-          tendencia: "positiva",
-          icono: "✅",
-        },
-      ]);
-    } catch (err: unknown) {
-      setError(extraerMensajeError(err));
-    } finally {
-      setCargando(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    void cargarMetricas();
-  }, [cargarMetricas]);
+    return [
+      { id: "pacientes", titulo: "Pacientes", valor: datos.pacientes, descripcion: "Pacientes registrados", tendencia: "positiva" as const, icono: "👥" },
+      { id: "medicos", titulo: "Médicos", valor: datos.medicos, descripcion: "Médicos registrados", tendencia: "positiva" as const, icono: "🩺" },
+      { id: "programadas", titulo: "Citas programadas", valor: datos.citasProgramadas, descripcion: "Pendientes de atención", tendencia: "neutra" as const, icono: "📅" },
+      { id: "completadas", titulo: "Citas completadas", valor: datos.citasCompletadas, descripcion: "Citas finalizadas", tendencia: "positiva" as const, icono: "✅" },
+      { id: "total-citas", titulo: "Citas contabilizadas", valor: totalCitasContabilizadas, descripcion: "Programadas + completadas", tendencia: "neutra" as const, icono: "📋" },
+      { id: "porcentaje-completadas", titulo: "Citas completadas", valor: `${porcentajeCompletadas}%`, descripcion: "De las citas programadas y completadas", tendencia: "positiva" as const, icono: "📈" },
+    ];
+  }, [datos]);
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-8 lg:px-12">
@@ -85,7 +47,7 @@ export default function PaginaDashboard() {
             </p>
 
             <h1 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              Dashboard
+              Panel de control
             </h1>
 
             <p className="mt-2 text-sm text-slate-500 sm:text-base">
@@ -113,6 +75,15 @@ export default function PaginaDashboard() {
 
             <button
               type="button"
+              onClick={() => void recargar()}
+              disabled={cargando}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 disabled:opacity-60"
+            >
+              {cargando ? "Actualizando..." : "Actualizar datos"}
+            </button>
+
+            <button
+              type="button"
               onClick={() => setMantenimiento((prev) => !prev)}
               aria-pressed={mantenimiento}
               className="rounded-lg bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
@@ -124,12 +95,25 @@ export default function PaginaDashboard() {
           </div>
 
           {cargando && (
-            <div role="status" aria-label="Cargando métricas" className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
-              {Array.from({ length: 4 }, (_, index) => <SkeletonMetricCard key={index} />)}
+            <div
+              role="status"
+              aria-label="Cargando métricas"
+              className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4"
+            >
+              {Array.from({ length: 4 }, (_, index) => (
+                <SkeletonMetricCard key={index} />
+              ))}
             </div>
           )}
 
-          {!cargando && error && <AlertaBanner tipo="error" titulo="No se pudieron cargar las métricas" mensaje={error} accion={{ label: "Reintentar", onClick: () => void cargarMetricas() }} />}
+          {!cargando && error && (
+            <AlertaBanner
+              tipo="error"
+              titulo="No se pudieron cargar las métricas"
+              mensaje={error}
+              accion={{ label: "Reintentar", onClick: () => void recargar() }}
+            />
+          )}
 
           {!cargando && !error && (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">

@@ -9,7 +9,7 @@ import {
   AlertaBanner,
   EstadoVacio,
   ModalConfirmacion,
-} from "../shared/components/ui";
+} from "../components/ui";
 import { SkeletonPacienteRow } from "../components/SkeletonPacienteRow";
 import { extraerMensajeError } from "../lib/errorHandler";
 import { FiltroEstado } from "../components/FiltroEstado";

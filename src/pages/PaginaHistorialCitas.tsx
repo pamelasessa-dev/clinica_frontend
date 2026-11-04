@@ -1,6 +1,6 @@
 import { useSearchParams } from "react-router";
 import { SkeletonCitaRow } from "../components/SkeletonCitaRow";
-import { AlertaBanner, EstadoVacio } from "../shared/components/ui";
+import { AlertaBanner, EstadoVacio } from "../components/ui";
 import { useCitas } from "../features/citas/hooks/useCitas";
 import type { EstadoFiltroCita } from "../types/citas";
 

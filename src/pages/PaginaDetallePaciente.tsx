@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router";
 import { PaginaNotFound } from "./PaginaNotFound";
-import { obtenerExpedientePaciente } from "../services/pacientes";
-import type { PacienteExpedienteApi } from "../types/paciente";
-import { extraerMensajeError } from "../lib/errorHandler";
+import { useExpedientePaciente } from "../features/pacientes/hooks/useExpedientePaciente";
 
 interface DatoDetalleProps {
   etiqueta: string;
@@ -30,35 +27,7 @@ export function PaginaDetallePaciente() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  const [paciente, setPaciente] = useState<PacienteExpedienteApi | null>(null);
-  const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState("");
-
-  const cargarExpediente = useCallback(async () => {
-    if (!id || !/^\d+$/.test(id)) {
-      setPaciente(null);
-      setError("El identificador del paciente no es válido.");
-      setCargando(false);
-      return;
-    }
-
-    setCargando(true);
-    setError("");
-
-    try {
-      const datos = await obtenerExpedientePaciente(id);
-      setPaciente(datos);
-    } catch (err: unknown) {
-      setPaciente(null);
-      setError(extraerMensajeError(err));
-    } finally {
-      setCargando(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    void cargarExpediente();
-  }, [cargarExpediente]);
+  const { paciente, cargando, error, recargar } = useExpedientePaciente(id);
 
   if (cargando) {
     return (
@@ -85,7 +54,7 @@ export function PaginaDetallePaciente() {
           <div className="mt-4 flex gap-3">
             <button
               type="button"
-              onClick={() => void cargarExpediente()}
+              onClick={() => void recargar()}
               className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
             >
               Reintentar
