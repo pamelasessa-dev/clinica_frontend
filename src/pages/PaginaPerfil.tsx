@@ -7,7 +7,7 @@ import { extraerMensajeError } from "../lib/errorHandler";
 import { perfilSchema, type PerfilFormData } from "../schemas/perfilSchema";
 import { actualizarPerfil } from "../services/auth";
 import { useAuthStore } from "../store/authStore";
-import { Spinner } from "../shared/components/ui";
+import { Spinner } from "../components/ui";
 
 const claseInput = "w-full rounded-lg border border-slate-300 px-4 py-3 text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-100";
 

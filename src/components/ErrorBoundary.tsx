@@ -1,6 +1,6 @@
 import { Component } from "react";
 import type { ErrorInfo, ReactNode } from "react";
-import { AlertaBanner } from "../shared/components/ui";
+import { AlertaBanner } from "./ui";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
